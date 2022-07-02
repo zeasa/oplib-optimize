@@ -1,4 +1,4 @@
-#CC = icc 
+CC = icc 
 CCFLAGS=-qmkl 
 #MKL_PATH=/opt/intel/composer_xe_2013_sp1/mkl
 #OMP_PATH=/opt/intel/composer_xe_2013_sp1/lib/intel64
