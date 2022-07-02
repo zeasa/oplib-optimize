@@ -5,8 +5,8 @@ set (CMAKE_BUILD_TYPE RELEASE)
 ########################################
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # project
-project(MANASIASM)
-set(MANASIASM_ROOT_PATH ${CMAKE_CURRENT_LIST_DIR})
+project(OPLIB)
+set(OPLIB_ROOT_PATH ${CMAKE_CURRENT_LIST_DIR})
 set(LIB_INSTALL_PATH install/lib)
 set(BIN_INSTALL_PATH install/bin)
 
@@ -24,23 +24,24 @@ set(GTEST_ROOT ${PROJECT_SOURCE_DIR}/3rdparty/gtest)
 
 ########################################
 # include directory
-set(MANASIASM_INCLUDE_DIRS
+set(OPLIB_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
     ${GTEST_ROOT}/include
 )
-include_directories(${MANASIASM_INCLUDE_DIRS})
+include_directories(${OPLIB_INCLUDE_DIRS})
 
-add_custom_target(example ALL
-        COMMAND ${CMAKE_MAKE_PROGRAM}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/example/
-        COMMENT "npu assembler example target(riscv-ext binary format)")
+#add_custom_target(example ALL
+#        COMMAND ${CMAKE_MAKE_PROGRAM}
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/example/
+#        COMMENT "npu assembler example target(riscv-ext binary format)")
 
 ########################################
 # subdirectories
 add_subdirectory(3rdparty/gtest)
 add_subdirectory(lib)
+add_subdirectory(example)
 add_subdirectory(test)
 
 enable_testing()
-add_test(NAME test_encode COMMAND test_encode)
+add_test(NAME test_oplib COMMAND test_oplib)
