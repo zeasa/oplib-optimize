@@ -31,10 +31,15 @@ set(OPLIB_INCLUDE_DIRS
 )
 include_directories(${OPLIB_INCLUDE_DIRS})
 
-#add_custom_target(example ALL
-#        COMMAND ${CMAKE_MAKE_PROGRAM}
-#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/example/
-#        COMMENT "npu assembler example target(riscv-ext binary format)")
+add_custom_target(dgemm ALL
+        COMMAND ${CMAKE_MAKE_PROGRAM}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/intel/dgemm
+        COMMENT "intel mkl dgemm example program")
+
+add_custom_target(sgemm ALL
+        COMMAND ${CMAKE_MAKE_PROGRAM}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/intel/sgemm_test
+        COMMENT "intel mkl dgemm example program")
 
 ########################################
 # subdirectories
