@@ -12,9 +12,9 @@ set(BIN_INSTALL_PATH install/bin)
 
 ########################################
 # language
-set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g3"          CACHE STRING "Flags used by the CXX compiler during DEBUG builds.")
-set(CMAKE_CXX_FLAGS_RELEASE        "-O2 "     CACHE STRING "Flags used by the CXX compiler during RELEASE builds.")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g3" CACHE STRING "Flags used by the CXX compiler during RELWITHDEBINFO builds.")
+set(CMAKE_CXX_FLAGS_DEBUG          "-qmkl -O0 -g3"          CACHE STRING "Flags used by the CXX compiler during DEBUG builds.")
+set(CMAKE_CXX_FLAGS_RELEASE        "-qmkl -O2 "     CACHE STRING "Flags used by the CXX compiler during RELEASE builds.")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-qmkl -O2 -g3" CACHE STRING "Flags used by the CXX compiler during RELWITHDEBINFO builds.")
 option(ENABLE_WERROR "Compile with -Werror enabled (default is OFF)" OFF)
 if (ENABLE_WERROR)
     add_compile_options(-Werror)
@@ -31,15 +31,15 @@ set(OPLIB_INCLUDE_DIRS
 )
 include_directories(${OPLIB_INCLUDE_DIRS})
 
-add_custom_target(dgemm ALL
-        COMMAND ${CMAKE_MAKE_PROGRAM}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/intel/dgemm
-        COMMENT "intel mkl dgemm example program")
+#add_custom_target(dgemm ALL
+#        COMMAND ${CMAKE_MAKE_PROGRAM}
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/intel/dgemm
+#        COMMENT "intel mkl dgemm example program")
 
-add_custom_target(sgemm ALL
-        COMMAND ${CMAKE_MAKE_PROGRAM}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/intel/sgemm_test
-        COMMENT "intel mkl dgemm example program")
+#add_custom_target(sgemm ALL
+#        COMMAND ${CMAKE_MAKE_PROGRAM}
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/intel/sgemm_test
+#        COMMENT "intel mkl dgemm example program")
 
 ########################################
 # subdirectories
