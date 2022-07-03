@@ -23,4 +23,4 @@ data
 *kernel_all.bin
 .cache/*
 trace.json
-
+*.bak

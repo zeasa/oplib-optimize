@@ -27,6 +27,7 @@ set(GTEST_ROOT ${PROJECT_SOURCE_DIR}/3rdparty/gtest)
 set(OPLIB_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/argtable3
     ${GTEST_ROOT}/include
 )
 include_directories(${OPLIB_INCLUDE_DIRS})
@@ -44,6 +45,7 @@ include_directories(${OPLIB_INCLUDE_DIRS})
 ########################################
 # subdirectories
 add_subdirectory(3rdparty/gtest)
+add_subdirectory(3rdparty/argtable3)
 add_subdirectory(lib)
 add_subdirectory(example)
 add_subdirectory(test)

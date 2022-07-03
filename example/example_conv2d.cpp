@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <mkl.h>
+#include "argtable3.h"
 #include "oplib_conv2d.h"
 
 #define __DEBUG
@@ -12,12 +13,20 @@
 #define DEBUG_INFO(format, ...)
 #endif
 
+#define __ARGTABLE
+
+
 #define FLOAT_T             float
 
 #define PROF_TMR_DECL()     struct timeval stime, etime, diff;double timeinsec, perf, time_st, time_end
 #define PROF_TMR_START()    gettimeofday(&stime, NULL);time_st  = dsecnd()
 #define PROF_TMR_END()      time_end = dsecnd();gettimeofday(&etime,NULL);timersub(&etime, &stime, &diff);timeinsec=(diff.tv_sec*1000+diff.tv_usec/1000)/1000.0;
 #define PROF_TMR_VALSEC     (time_end - time_st)
+
+struct arg_lit  *help;
+struct arg_lit  *version;
+struct arg_lit  *debug;
+struct arg_end  *argend;
 
 #define MEM_LAYOUT_NHWC     (0)
 #define MEM_LAYOUT_NCHW     (1)
@@ -61,38 +70,99 @@ typedef struct
 #define CONST_SW    ((CONST_IW - CONST_KW + CONST_PL + CONST_PR) / CONST_SW + 1)
 
 #define IN  (2)
-#define IC  (8)
-#define IH  (8)
-#define IW  (8)
-#define OC  (8)
+#define IC  (64)
+#define IH  (256)
+#define IW  (256)
+#define OC  (64)
 #define KW  (3)
 #define KH  (3)
 #define OH  (IH)
 #define OW  (IW)
 
-void dump_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf, const char *strTensorName);
+#define CONV2D_ITERNUM  (1)
+
+void dump_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf, const char *strTensorName, int enable);
 void gen_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf);
 int conv2d_3x3_s1(strConv2Dparam_t *pParam, 
               FLOAT_T *pbuf_in, 
               FLOAT_T *pbuf_out, 
               FLOAT_T *pbuf_wt,
               FLOAT_T *pbuf_bs);
-double get_cpu_peak_computation_capability_in_gflops();
+double get_cpu_peak_gflops_avx2();
+double get_cpu_peak_gflops_fpu();
+double conv2d_calc_gflops(int n, int h, int w, int c, int kw, int kh, int oc);
 
-int main() 
+int main(int argc, char *argv[])
 {
+    int dump_enable = 0;
     int n, c, h, w;
+    double cpu_gflops_avx2;
+    double cpu_gflops_fpu;
+    double conv2d_gflops;
+    double conv2d_time_used;
     FLOAT_T *pifm = NULL;
     FLOAT_T *pofm = NULL;
     FLOAT_T *pwt  = NULL;
     FLOAT_T *pbs  = NULL;
     PROF_TMR_DECL();
 
+    DEBUG_INFO("example_oplib_conv2d program...\n");
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
-    DEBUG_INFO("hello example_oplib_conv2d\n");
-    //DEBUG_INFO("the result is %d\n", oplib_conv2d(11, 22));
+    //argment processing
+#ifdef __ARGTABLE
+    void *argtable[] = {
+        help    = arg_lit0("h", "help",    "display this help and exit"),
+        version = arg_lit0("v", "version", "display version info and exit"),
+        debug   = arg_lit0("d", "debug",   "enable log of debug information"),
+        argend  = arg_end(20)
+    };
+    char *progname = argv[0];
 
-#if 0
+    /* verify the argtable[] entries were allocated sucessfully */
+    if (arg_nullcheck(argtable) != 0)
+        perror("insufficient memory!");
+
+    /* If the parser returned any errors then display them and exit */
+    if (arg_parse(argc,argv,argtable) > 0)
+    {
+        /* Display the error details contained in the arg_end struct.*/
+        arg_print_errors(stdout, argend, progname);
+        perror("Try '--help' for more information!");
+    }
+    /* special case: '--help' takes precedence over error reporting */
+    if (help->count > 0)
+    {
+        printf("Usage: %s", progname);
+        arg_print_syntax(stdout, argtable, "\n");
+        printf("List information about the FILE(s) "
+               "(the current directory by default).\n\n");
+        arg_print_glossary(stdout, argtable, "  %-25s %s\n");
+        goto fail;
+    }
+
+    /* special case: '--version' takes precedence error reporting */
+    if (version->count > 0)
+    {
+        printf("'%s' example program for the \"argtable\" command line argument parser.\n",progname);
+        printf("03/07/2022, zhangw\n");
+        goto fail;
+    }
+
+    /* special case: '--debug' takes precedence error reporting */
+    if (debug->count > 0)
+    {
+        dump_enable = 1;
+    }
+#endif
+
+    DEBUG_INFO("dump mode = [%s]\n", dump_enable ? "true" : "false");
+
+    //cpu performance detection
+    cpu_gflops_avx2 = get_cpu_peak_gflops_avx2();
+    cpu_gflops_fpu  = get_cpu_peak_gflops_fpu();
+
+    //buffer allocation and data preferation
     pifm = (FLOAT_T*)malloc(IN*IC*IW*IH*sizeof(FLOAT_T));
     if(pifm == NULL)
         perror("ifm malloc failed!");
@@ -110,17 +180,24 @@ int main()
     h = IH;
     w = IW;
     gen_nhwc_fp32(n, c, h, w, pifm);
-    dump_nhwc_fp32(n, c, h, w, pifm, "ifm");
+    dump_nhwc_fp32(n, c, h, w, pifm, "ifm", dump_enable);
 
     n = OC;
     c = IC;
     h = KH;
     w = KW;
     gen_nhwc_fp32(n, c, h, w, pwt);
-    dump_nhwc_fp32(n, c, h, w, pwt, "weight");
-    
+    dump_nhwc_fp32(n, c, h, w, pwt, "weight", dump_enable);
+
+    //conv2d gflops calculation
+    conv2d_gflops = conv2d_calc_gflops(IN, IH, IW, IC, KW, KH, OC);
+    DEBUG_INFO("conv2d param : N=%d,H=%d,W=%d,C=%d,KW=%d,KH=%d,OC=%d,gflops=[%.6lf]\n", 
+               IN, IH, IW, IC, KW, KH, OC, 
+               conv2d_gflops);
+
+    //do the conv2d calculation and profiling
     PROF_TMR_START();
-    for(int i=0;i<10000;i++)
+    for(int i=0;i<CONV2D_ITERNUM;i++)
     {
         conv2d_3x3_s1(NULL, 
                 pifm, 
@@ -129,41 +206,54 @@ int main()
                 NULL); 
     }
     PROF_TMR_END();
-    DEBUG_INFO("conv2d_3x3_s1() cost %lf seconds\n", PROF_TMR_VALSEC);
+    conv2d_time_used = PROF_TMR_VALSEC / CONV2D_ITERNUM;
+    DEBUG_INFO("conv2d_3x3_s1() cost [%lf] seconds in avg within [%d] iters\n", conv2d_time_used, CONV2D_ITERNUM);
+    DEBUG_INFO("conv2d_3x3_s1() calculation profermance is [%lf] gflops/s\n", conv2d_gflops / conv2d_time_used);
 
+    //check the result
     n = IN;
     c = OC;
     h = OH;
     w = OW;
-    dump_nhwc_fp32(n, c, h, w, pofm, "ofm");
+    dump_nhwc_fp32(n, c, h, w, pofm, "ofm", dump_enable);
 
+    //do program finalization
     free(pifm);
-#endif
+    free(pwt);
+    free(pofm);
 
-    get_cpu_peak_computation_capability_in_gflops();
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    DEBUG_INFO("program exit!\n");
+
+fail:
+    /* deallocate each non-null entry in argtable[] */
+    arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
     return 0;
 }
 
-void dump_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf, const char *strTensorName)
+void dump_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf, const char *strTensorName, int enable)
 {
     int n, c, h, w;
 
-    printf("\n\n<Tensor(%s)[%d,%d,%d,%d]>", strTensorName, N,C,H,W);
-    for(n=0;n<N;++n)
+    if(enable)
     {
-        printf("\n*******n[%d]************************************\n", n);
-        for(c=0;c<C;++c)
+        printf("\n\n<Tensor(%s)[%d,%d,%d,%d]>", strTensorName, N,C,H,W);
+        for(n=0;n<N;++n)
         {
-            printf(" ======c[%d]====================================\n", c);
-            for(h=0;h<H;++h)
+            printf("\n*******n[%d]************************************\n", n);
+            for(c=0;c<C;++c)
             {
-                printf(" ");
-                for(w=0;w<W;++w)
+                printf(" ======c[%d]====================================\n", c);
+                for(h=0;h<H;++h)
                 {
-                    printf("%.2f ", pbuf[C*W*H*n + C*W*h + C*w + c]);
-                }
-                printf("\n");
-            }   
+                    printf(" ");
+                    for(w=0;w<W;++w)
+                    {
+                        printf("%.2f ", pbuf[C*W*H*n + C*W*h + C*w + c]);
+                    }
+                    printf("\n");
+                }   
+            }
         }
     }
 }
@@ -232,11 +322,15 @@ int conv2d_3x3_s1(strConv2Dparam_t *pParam,
     return 0;
 }
 
-double get_cpu_peak_computation_capability_in_gflops()
+double conv2d_calc_gflops(int n, int h, int w, int c, int kw, int kh, int oc)
+{
+    return 2.0d * n * oc * w * h * kw * kh * c / (1.0*1000*1000*1000);
+}
+
+double get_cpu_peak_gflops_avx2()
 {
     PROF_TMR_DECL();
-
-    DEBUG_INFO("get_cpu_peak_computation_capability_in_gflops.........\n");
+    //DEBUG_INFO("get_cpu_peak_gflops_avx2.........\n");
 
     PROF_TMR_START();
     __asm__(
@@ -245,13 +339,46 @@ double get_cpu_peak_computation_capability_in_gflops()
         "vxorps %ymm1, %ymm1, %ymm1;"
         "vxorps %ymm2, %ymm2, %ymm2;"
         "vxorps %ymm3, %ymm3, %ymm3;"
-        "loop:"
+        "loop1:"
         "vmulps %ymm1, %ymm1, %ymm0;"
         "vaddps %ymm3, %ymm3, %ymm2;"
         "subq $0x1, %rax;"
-        "jne loop;"
+        "jne loop1;"
     );
     PROF_TMR_END();
 
-    DEBUG_INFO("peak avx2 vmul+vadd computation performance(1 thread) is [%lf] GFLOPS\n", (8+8)*1000000000.0/PROF_TMR_VALSEC/100000000);
+    DEBUG_INFO("peak avx2 vmul+vadd computation performance(1 thread) is [%lf] GFLOPS\n", (8+8)*1000000000.0/PROF_TMR_VALSEC/1000000000);
+}
+
+double get_cpu_peak_gflops_fpu()
+{
+    PROF_TMR_DECL();
+    //DEBUG_INFO("get_cpu_peak_gflops_fpu.........\n");
+
+    PROF_TMR_START();
+    __asm__(
+        "mov $1000000000, %rax;"
+        "pxor  %xmm0, %xmm0;"
+        "pxor  %xmm1, %xmm1;"
+        "pxor  %xmm2, %xmm2;"
+        "pxor  %xmm3, %xmm3;"
+        "pxor  %xmm4, %xmm4;"
+        "pxor  %xmm5, %xmm5;"
+        "pxor  %xmm6, %xmm6;"
+        "pxor  %xmm7, %xmm7;"
+        "loop2:"
+        "mulss %xmm0, %xmm0;"
+        "mulss %xmm1, %xmm1;"
+        "mulss %xmm2, %xmm2;"
+        "mulss %xmm3, %xmm3;"
+        "addss %xmm4, %xmm4;"
+        "addss %xmm5, %xmm5;"
+        "addss %xmm6, %xmm6;"
+        "addss %xmm7, %xmm7;"
+        "subq $0x1, %rax;"
+        "jne loop2;"
+    );
+    PROF_TMR_END();
+
+    DEBUG_INFO("peak fpu computation performance(1 thread) is [%lf] GFLOPS\n", (4+4)*1000000000.0/PROF_TMR_VALSEC/1000000000);
 }
