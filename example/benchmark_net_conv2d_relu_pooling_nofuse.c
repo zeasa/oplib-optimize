@@ -4,7 +4,10 @@
 #include "benchmark_testcase.h"
 
 #define __ARGTABLE
-#define CONV2D_ITERNUM      (1)
+
+#define CONV_ITERNUM        (1)
+#define RELU_ITERNUM        (1000)
+#define POOL_ITERNUM        (500)
 
 struct arg_lit  *help;
 struct arg_lit  *version;
@@ -62,8 +65,13 @@ int main(int argc, char *argv[])
     int n, c, h, w;
     double cpu_gflops_avx2;
     double cpu_gflops_fpu;
+
     double conv2d_gflops;
+    double relu_gflops;
+    double pool_gflops;
     double conv2d_time_used;
+    double relu_time_used;
+    double pool_time_used;
 
     FLOAT_T *pbuf_ifm_conv = NULL;
     FLOAT_T *pbuf_ofm_conv = NULL;
@@ -184,7 +192,7 @@ int main(int argc, char *argv[])
     if(pbuf_ofm_pool == NULL)
         perror("pbuf_ofm_pool malloc failed!");
 
-    DEBUG_INFO("generate test data for [pbuf_ifm_conv]!\n");
+    DEBUG_INFO("generate test data for [pbuf_ifm_conv]\n");
     dim_nhwc.n = conv2d_param.param_N ;
     dim_nhwc.h = conv2d_param.param_IH;
     dim_nhwc.w = conv2d_param.param_IW;
@@ -192,7 +200,7 @@ int main(int argc, char *argv[])
     oplib_gen_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv);
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv, "pbuf_ifm_conv", dump_enable);
 
-    DEBUG_INFO("generate test data for [pbuf_wt_conv]!\n");
+    DEBUG_INFO("generate test data for [pbuf_wt_conv]\n");
     dim_nhwc.n = conv2d_param.param_OC;
     dim_nhwc.h = conv2d_param.param_KH;
     dim_nhwc.w = conv2d_param.param_KW;
@@ -200,7 +208,7 @@ int main(int argc, char *argv[])
     oplib_gen_nhwc_fp32(&dim_nhwc, pbuf_wt_conv);
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_wt_conv, "pbuf_wt_conv", dump_enable);
 
-    DEBUG_INFO("generate test data for [pbuf_bs_conv]!\n");
+    DEBUG_INFO("generate test data for [pbuf_bs_conv]\n");
     dim_nhwc.n = 1;
     dim_nhwc.h = 1;
     dim_nhwc.w = 1;
@@ -208,12 +216,14 @@ int main(int argc, char *argv[])
     oplib_gen_nhwc_fp32(&dim_nhwc, pbuf_bs_conv);
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_bs_conv, "pbuf_bs_conv", dump_enable);
 
-    //conv2d gflops calculation and property report
+    //gflops calculation and property report
     conv2d_gflops = oplib_layer_conv2d_3x3_s1_report_property(&conv2d_param);
+    relu_gflops   = oplib_layer_relu_report_property(&relu_param);
+    pool_gflops   = oplib_layer_avgpool_report_property(&pool_param);
 
     //do the conv2d calculation and profiling
     PROF_TMR_START();
-    for(int i=0; i<CONV2D_ITERNUM; i++)
+    for(int i=0; i<CONV_ITERNUM; i++)
     {
         oplib_layer_conv2d_3x3_s1_forward(&conv2d_param, 
                                    pbuf_ifm_conv, 
@@ -222,16 +232,51 @@ int main(int argc, char *argv[])
                                    pbuf_bs_conv); 
     }
     PROF_TMR_END();
-    conv2d_time_used = PROF_TMR_VALSEC / CONV2D_ITERNUM;
-    DEBUG_INFO("oplib_layer_conv2d_3x3_s1() cost [%lf] seconds in avg within [%d] iters\n", conv2d_time_used, CONV2D_ITERNUM);
-    DEBUG_INFO("oplib_layer_conv2d_3x3_s1() calculation profermance is [%lf] gflops/s\n", conv2d_gflops / conv2d_time_used);
+    conv2d_time_used = PROF_TMR_VALSEC / CONV_ITERNUM;
+
+    //do the conv2d calculation and profiling
+    PROF_TMR_START();
+    for(int i=0; i<RELU_ITERNUM; i++)
+    {
+        oplib_layer_relu_forward(&relu_param, 
+                                   pbuf_ofm_conv, 
+                                   pbuf_ofm_relu); 
+    }
+    PROF_TMR_END();
+    relu_time_used = PROF_TMR_VALSEC / RELU_ITERNUM;
+
+    //do the conv2d calculation and profiling
+    PROF_TMR_START();
+    for(int i=0; i<POOL_ITERNUM; i++)
+    {
+        oplib_layer_avgpool_forward(&pool_param, 
+                                   pbuf_ofm_relu, 
+                                   pbuf_ofm_pool); 
+    }
+    PROF_TMR_END();
+    pool_time_used = PROF_TMR_VALSEC / POOL_ITERNUM;
+
 
     //check the result
-    dim_nhwc.n = conv2d_param.param_N;
-    dim_nhwc.c = conv2d_param.param_OC;
-    dim_nhwc.h = conv2d_param.param_OH;
-    dim_nhwc.w = conv2d_param.param_OW;
-    oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_conv, "pbuf_ofm_conv", dump_enable);
+    dim_nhwc.n = pool_param.param_N;
+    dim_nhwc.c = pool_param.param_OC;
+    dim_nhwc.h = pool_param.param_OH;
+    dim_nhwc.w = pool_param.param_OW;
+    oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_pool, "pbuf_ofm_pool", dump_enable);
+
+
+
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+
+    DEBUG_INFO("report : oplib_layer_conv2d_3x3_s1 cost [%lf] seconds in avg within [%d] iters\n", conv2d_time_used, CONV_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_relu          cost [%lf] seconds in avg within [%d] iters\n", relu_time_used,   RELU_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_avgpool       cost [%lf] seconds in avg within [%d] iters\n", pool_time_used,   POOL_ITERNUM);
+
+    DEBUG_INFO("report : oplib_layer_conv2d_3x3_s1 calculation profermance is [%lf] GFLOPS/s\n", conv2d_gflops / conv2d_time_used);
+    DEBUG_INFO("report : oplib_layer_relu          calculation profermance is [%lf] GFLOPS/s\n", relu_gflops   / relu_time_used);
+    DEBUG_INFO("report : oplib_layer_avgpool       calculation profermance is [%lf] GFLOPS/s\n", pool_gflops   / pool_time_used);
+
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
     //do program finalization
     free(pbuf_ifm_conv);
@@ -243,11 +288,9 @@ int main(int argc, char *argv[])
     free(pbuf_ifm_pool);
     free(pbuf_ofm_pool);
 
-    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-    DEBUG_INFO("program exit!\n");
-
 failed:
     /* deallocate each non-null entry in argtable[] */
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
+    DEBUG_INFO("program exit!\n");
     return 0;
 }

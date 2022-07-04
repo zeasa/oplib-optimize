@@ -5,7 +5,7 @@
 void oplib_dump_nhwc_fp32(const strDimNHWC_t *pDim, const FLOAT_T *pbuf, const char *strTensorName, int enable)
 {
     assert((pDim != NULL) && (pbuf != NULL));
-    
+
     int N = pDim->n;
     int C = pDim->c;
     int H = pDim->h;
@@ -82,7 +82,7 @@ double oplib_get_cpu_peak_gflops_avx2()
     );
     PROF_TMR_END();
 
-    DEBUG_INFO("peak avx2 vmul+vadd computation performance(1 thread) is [%lf] GFLOPS\n", (8+8)*1000000000.0/PROF_TMR_VALSEC/1000000000);
+    DEBUG_INFO("peak avx2 vmul+vadd computation performance(1 thread) is [%lf] GFLOPS/s\n", (8+8)*1000000000.0/PROF_TMR_VALSEC/1000000000);
 }
 
 double oplib_get_cpu_peak_gflops_fpu()
@@ -115,7 +115,7 @@ double oplib_get_cpu_peak_gflops_fpu()
     );
     PROF_TMR_END();
 
-    DEBUG_INFO("peak fpu computation performance(1 thread) is [%lf] GFLOPS\n", (4+4)*1000000000.0/PROF_TMR_VALSEC/1000000000);
+    DEBUG_INFO("peak fpu computation performance(1 thread) is [%lf] GFLOPS/s\n", (4+4)*1000000000.0/PROF_TMR_VALSEC/1000000000);
 }
 
 int oplib_conv2d_demo(int a, int b)

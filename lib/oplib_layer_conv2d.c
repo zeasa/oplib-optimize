@@ -60,7 +60,7 @@ double oplib_layer_conv2d_3x3_s1_report_property(const strConv2DParam_t *pParam)
     double gflops = 2.0d * pParam->param_N * pParam->param_OC * pParam->param_OW * 
            pParam->param_OH * pParam->param_KW * pParam->param_KH * pParam->param_IC / (1.0*1000*1000*1000);;
 
-    DEBUG_INFO("oplib_layer_conv2d_3x3_s1 param : N=[%d],H=[%d],W=[%d],C=[%d],KW=[%d],KH=[%d],OC=[%d],gflops=[%.6lf]\n", 
+    DEBUG_INFO("oplib_layer_conv2d_3x3_s1 param : IN=[%d],IH=[%d],IW=[%d],IC=[%d],KW=[%d],KH=[%d],OC=[%d],gflops=[%.6lf]\n", 
                pParam->param_N, 
                pParam->param_IH, 
                pParam->param_IW, 

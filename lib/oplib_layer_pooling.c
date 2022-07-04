@@ -53,7 +53,17 @@ void oplib_layer_avgpool_forward(const strAvgPoolParam_t *pParam, const FLOAT_T 
 double oplib_layer_avgpool_report_property(const strAvgPoolParam_t *pParam)
 {
     assert(pParam != NULL);
+    double gflops = 0.0;
+    
+    DEBUG_INFO("oplib_layer_avgpool param : IN=[%d],IH=[%d],IW=[%d],IC=[%d],OH=[%d],OW=[%d],OC=[%d],gflops=[%.6lf]\n", 
+               pParam->param_N, 
+               pParam->param_IH, 
+               pParam->param_IW, 
+               pParam->param_IC, 
+               pParam->param_OH, 
+               pParam->param_OW, 
+               pParam->param_OC, 
+               gflops);
 
-
-    return 0.0;
+    return gflops;
 }
