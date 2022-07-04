@@ -1,6 +1,7 @@
 #ifndef _OPLIB_CONV2D_H__
 #define _OPLIB_CONV2D_H__
 
+/*data structure definition*/
 typedef struct 
 {
     int n;
@@ -52,17 +53,21 @@ typedef struct
     int param_OW   ;// output width
 }strAvgPoolParam_t;
 
+/*common interface*/
 void dump_nhwc_fp32(const strDimNHWC_t *p_dim, FLOAT_T *pbuf, const char *strTensorName, int enable);
 void gen_nhwc_fp32(const strDimNHWC_t *p_dim, FLOAT_T *pbuf);
+double get_cpu_peak_gflops_avx2();
+double get_cpu_peak_gflops_fpu();
+
+/*layer interface*/
 int  oplib_layer_conv2d_3x3_s1(const strConv2DParam_t *pParam, 
               FLOAT_T *pbuf_in, 
               FLOAT_T *pbuf_out, 
               FLOAT_T *pbuf_wt,
               FLOAT_T *pbuf_bs);
-double get_cpu_peak_gflops_avx2();
-double get_cpu_peak_gflops_fpu();
 double conv2d_calc_gflops(const strConv2DParam_t *pParam);
 
+/*other interface*/
 int oplib_conv2d_demo(int a, int b);
 
 #endif/*_OPLIB_CONV2D_H__*/

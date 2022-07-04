@@ -1,11 +1,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-
 #include "argtable3.h"
 
 #include "oplib_common.h"
-#include "oplib_conv2d.h"
+#include "oplib_interface.h"
 
 #define __ARGTABLE
 #define CONV2D_ITERNUM      (1)
@@ -186,7 +185,7 @@ int main(int argc, char *argv[])
     sz_ifm_pool = pool_param.param_N *pool_param.param_IC*pool_param.param_IH*pool_param.param_IW*sizeof(FLOAT_T);
     sz_ofm_pool = pool_param.param_N *pool_param.param_OC*pool_param.param_OH*pool_param.param_OW*sizeof(FLOAT_T);
 
-
+    DEBUG_INFO("allocate buffers for input/output/intermediate tensors!\n");
     //buffer allocation and data preferation
     pbuf_ifm_conv = (FLOAT_T*)malloc(sz_ifm_conv);
     if(pbuf_ifm_conv == NULL)
@@ -220,23 +219,33 @@ int main(int argc, char *argv[])
     if(pbuf_ofm_pool == NULL)
         perror("pbuf_ofm_pool malloc failed!");
 
+    DEBUG_INFO("generate test data for [pbuf_ifm_conv]!\n");
     dim_nhwc.n = conv2d_param.param_N ;
-    dim_nhwc.c = conv2d_param.param_IC;
     dim_nhwc.h = conv2d_param.param_IH;
     dim_nhwc.w = conv2d_param.param_IW;
+    dim_nhwc.c = conv2d_param.param_IC;
     gen_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv);
     dump_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv, "pbuf_ifm_conv", dump_enable);
 
+    DEBUG_INFO("generate test data for [pbuf_wt_conv]!\n");
     dim_nhwc.n = conv2d_param.param_OC;
-    dim_nhwc.c = conv2d_param.param_IC;
     dim_nhwc.h = conv2d_param.param_KH;
     dim_nhwc.w = conv2d_param.param_KW;
+    dim_nhwc.c = conv2d_param.param_IC;
     gen_nhwc_fp32(&dim_nhwc, pbuf_wt_conv);
     dump_nhwc_fp32(&dim_nhwc, pbuf_wt_conv, "pbuf_wt_conv", dump_enable);
 
+    DEBUG_INFO("generate test data for [pbuf_bs_conv]!\n");
+    dim_nhwc.n = 1;
+    dim_nhwc.h = 1;
+    dim_nhwc.w = 1;
+    dim_nhwc.c = conv2d_param.param_OC;
+    gen_nhwc_fp32(&dim_nhwc, pbuf_bs_conv);
+    dump_nhwc_fp32(&dim_nhwc, pbuf_bs_conv, "pbuf_bs_conv", dump_enable);
+
     //conv2d gflops calculation
     conv2d_gflops = conv2d_calc_gflops(&conv2d_param);
-    DEBUG_INFO("conv2d param : N=%d,H=%d,W=%d,C=%d,KW=%d,KH=%d,OC=%d,gflops=[%.6lf]\n", 
+    DEBUG_INFO("conv2d param : N=[%d],H=[%d],W=[%d],C=[%d],KW=[%d],KH=[%d],OC=[%d],gflops=[%.6lf]\n", 
                conv2d_param.param_N, 
                conv2d_param.param_IH, 
                conv2d_param.param_IW, 

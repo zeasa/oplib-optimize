@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "oplib_common.h"
-#include "oplib_conv2d.h"
+#include "oplib_interface.h"
 
 
 /*do_encode_mad(uint32_t rs2, uint32_t rs1, uint32_t vbrd, uint32_t pt_idx)*/
