@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "oplib_common.h"
 #include "oplib_interface.h"
 
@@ -11,6 +9,9 @@ int oplib_layer_conv2d_3x3_s1(const strConv2DParam_t *pParam,
               FLOAT_T *pbuf_wt,
               FLOAT_T *pbuf_bs) 
 {
+    assert((pParam != NULL) && (pbuf_in != NULL) && 
+           (pbuf_out != NULL) && (pbuf_wt) && (pbuf_bs));
+    
     int OC = pParam->param_OC;
     int OH = pParam->param_OH;
     int OW = pParam->param_OW;

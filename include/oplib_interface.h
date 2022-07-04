@@ -1,6 +1,10 @@
 #ifndef _OPLIB_CONV2D_H__
 #define _OPLIB_CONV2D_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*data structure definition*/
 typedef struct 
 {
@@ -46,6 +50,8 @@ typedef struct
     int param_IC   ;// input channels
     int param_IH   ;// input height
     int param_IW   ;// input width
+    int param_KH   ;// weights height
+    int param_KW   ;// weights width
     int param_SH   ;// height-wise stride
     int param_SW   ;// width-wise stride
     int param_OC   ;// output channels
@@ -70,4 +76,7 @@ double conv2d_calc_gflops(const strConv2DParam_t *pParam);
 /*other interface*/
 int oplib_conv2d_demo(int a, int b);
 
+#ifdef __cplusplus
+}
+#endif
 #endif/*_OPLIB_CONV2D_H__*/

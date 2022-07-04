@@ -1,8 +1,5 @@
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
-#include "argtable3.h"
 
+#include "argtable3.h"
 #include "oplib_common.h"
 #include "oplib_interface.h"
 
@@ -42,6 +39,8 @@ struct arg_end  *argend;
 #define  POOL_IC	(RELU_IC)  // input channels
 #define  POOL_IH	(RELU_IH)  // input height
 #define  POOL_IW	(RELU_IW)  // input width
+#define  POOL_KH	(2)        // kernel height
+#define  POOL_KW	(2)        // kernel width
 #define  POOL_SH	(2)        // height-wise stride
 #define  POOL_SW	(2)        // width-wise stride
 #define  POOL_OC	(POOL_IC)  // input channels
@@ -84,6 +83,8 @@ const strAvgPoolParam_t pool_param =
     POOL_IC, // input channels
     POOL_IH, // input height
     POOL_IW, // input width
+    POOL_KH, // input height
+    POOL_KW, // input width
     POOL_SH, // height-wise stride
     POOL_SW, // width-wise stride
     POOL_OC, // output channels

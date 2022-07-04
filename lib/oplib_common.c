@@ -1,5 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "oplib_common.h"
 #include "oplib_interface.h"
 

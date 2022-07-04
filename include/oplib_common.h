@@ -1,8 +1,15 @@
 #ifndef _OPLIB_COMMON_H__
 #define _OPLIB_COMMON_H__
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
 #include <sys/time.h>
 #include <mkl.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef  _DEBUG_
 #define DEBUG_INFO(format, ...)		printf("[DEBUG]: " format, ##__VA_ARGS__)
@@ -21,5 +28,7 @@
 #define PROF_TMR_END()      time_end = dsecnd();gettimeofday(&etime,NULL);timersub(&etime, &stime, &diff);timeinsec=(diff.tv_sec*1000+diff.tv_usec/1000)/1000.0;
 #define PROF_TMR_VALSEC     (time_end - time_st)
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif /*_OPLIB_COMMON_H__*/

@@ -1,10 +1,10 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "oplib_common.h"
 #include "oplib_interface.h"
 
 int oplib_layer_relu(const strReluParam_t *pParam, FLOAT_T *pbuf_in, FLOAT_T *pbuf_out)
 {
+    assert((pParam != NULL) && (pbuf_in != NULL) && (pbuf_out != NULL));
+    
     int IC = pParam->param_IC;
     int IH = pParam->param_IH;
     int IW = pParam->param_IW;
