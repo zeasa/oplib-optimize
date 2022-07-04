@@ -1,96 +1,96 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
-#include <sys/time.h>
-#include <mkl.h>
+
 #include "argtable3.h"
+
+#include "oplib_common.h"
 #include "oplib_conv2d.h"
 
-#define __DEBUG
-#ifdef  __DEBUG
-#define DEBUG_INFO(format, ...)		printf("[DEBUG]: " format, ##__VA_ARGS__)
-#else
-#define DEBUG_INFO(format, ...)
-#endif
-
 #define __ARGTABLE
-
-
-#define FLOAT_T             float
-
-#define PROF_TMR_DECL()     struct timeval stime, etime, diff;double timeinsec, perf, time_st, time_end
-#define PROF_TMR_START()    gettimeofday(&stime, NULL);time_st  = dsecnd()
-#define PROF_TMR_END()      time_end = dsecnd();gettimeofday(&etime,NULL);timersub(&etime, &stime, &diff);timeinsec=(diff.tv_sec*1000+diff.tv_usec/1000)/1000.0;
-#define PROF_TMR_VALSEC     (time_end - time_st)
+#define CONV2D_ITERNUM      (1)
 
 struct arg_lit  *help;
 struct arg_lit  *version;
 struct arg_lit  *debug;
 struct arg_end  *argend;
 
-#define MEM_LAYOUT_NHWC     (0)
-#define MEM_LAYOUT_NCHW     (1)
-#define MEM_LAYOUT_NHWC8    (2)
+#define  CONV_N		(2)        // batch size
+#define  CONV_IC	(64)       // input channels
+#define  CONV_IH	(256)      // input height
+#define  CONV_IW	(256)      // input width
+#define  CONV_OC	(64)       // output channels
+#define  CONV_OH	(CONV_IH)  // output height
+#define  CONV_OW	(CONV_IW)  // output width
+#define  CONV_KH	(3)        // weights height
+#define  CONV_KW	(3)        // weights width
+#define  CONV_PT	(1)        // padding: left
+#define  CONV_PB	(1)        // padding: right
+#define  CONV_PL	(1)        // padding: left
+#define  CONV_PR	(1)        // padding: right
+#define  CONV_SH	(1)        // height-wise stride
+#define  CONV_SW	(1)        // width-wise stride
 
-typedef struct 
+#define  RELU_N		(CONV_N)   // batch size
+#define  RELU_IC	(CONV_OC)  // input channels
+#define  RELU_IH	(CONV_OH)  // input height
+#define  RELU_IW	(CONV_OW)  // input width
+#define  RELU_OC	(RELU_IC)  // output channels
+#define  RELU_OH	(RELU_IH)  // output height
+#define  RELU_OW	(RELU_IW)  // output width
+
+#define  POOL_N		(RELU_N)   // batch size
+#define  POOL_IC	(RELU_IC)  // input channels
+#define  POOL_IH	(RELU_IH)  // input height
+#define  POOL_IW	(RELU_IW)  // input width
+#define  POOL_SH	(2)        // height-wise stride
+#define  POOL_SW	(2)        // width-wise stride
+#define  POOL_OC	(POOL_IC)  // input channels
+#define  POOL_OH	(POOL_IH/POOL_SH)  // input height
+#define  POOL_OW	(POOL_IW/POOL_SW)  // input width
+
+const strConv2DParam_t conv2d_param = 
 {
-    int param_N    ;// batch size
-    int param_IC   ;// input channels
-    int param_IH   ;// input height
-    int param_IW   ;// input width
-    int param_OC   ;// output channels
-    int param_OH   ;// output height
-    int param_OW   ;// output width
-    int param_KH   ;// weights height
-    int param_KW   ;// weights width
-    int param_PH_L ;// height padding: left
-    int param_PH_R ;// height padding: right
-    int param_PW_L ;// width padding: left
-    int param_PW_R ;// width padding: right
-    int param_SH   ;// height-wise stride
-    int param_SW   ;// width-wise stride
-}strConv2Dparam_t;
+    CONV_N,  // batch size
+    CONV_IC, // input channels
+    CONV_IH, // input height
+    CONV_IW, // input width
+    CONV_OC, // output channels
+    CONV_OH, // output height
+    CONV_OW, // output width
+    CONV_KH, // weights height
+    CONV_KW, // weights width
+    CONV_PT, // height padding: left
+    CONV_PB, // height padding: right
+    CONV_PL, // width padding: left
+    CONV_PR, // width padding: right
+    CONV_SH, // height-wise stride
+    CONV_SW  // width-wise stride
+};
 
+const strReluParam_t relu_param = 
+{
+    RELU_N,  // batch size
+    RELU_IC, // input channels
+    RELU_IH, // input height
+    RELU_IW, // input width
+    RELU_OC, // output channels
+    RELU_OH, // output height
+    RELU_OW  // output width,
+};
 
-
-#define CONST_N     (4)// batch size
-#define CONST_IC    (64)// input channels
-#define CONST_IH    (1024)// input height
-#define CONST_IW    (1024)// input width
-#define CONST_OC    (64)// output channels
-#define CONST_OH    ()// output height
-#define CONST_OW    ()// output width
-#define CONST_KH    (3)// weights height
-#define CONST_KW    (3)// weights width
-#define CONST_PT    (1)// padding top
-#define CONST_PB    (1)// padding bot
-#define CONST_PL    (1)// padding left
-#define CONST_PR    (1)// padding right
-#define CONST_SH    ((CONST_IH - CONST_KH + CONST_PT + CONST_PB) / CONST_SH + 1)
-#define CONST_SW    ((CONST_IW - CONST_KW + CONST_PL + CONST_PR) / CONST_SW + 1)
-
-#define IN  (2)
-#define IC  (64)
-#define IH  (256)
-#define IW  (256)
-#define OC  (64)
-#define KW  (3)
-#define KH  (3)
-#define OH  (IH)
-#define OW  (IW)
-
-#define CONV2D_ITERNUM  (1)
-
-void dump_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf, const char *strTensorName, int enable);
-void gen_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf);
-int conv2d_3x3_s1(strConv2Dparam_t *pParam, 
-              FLOAT_T *pbuf_in, 
-              FLOAT_T *pbuf_out, 
-              FLOAT_T *pbuf_wt,
-              FLOAT_T *pbuf_bs);
-double get_cpu_peak_gflops_avx2();
-double get_cpu_peak_gflops_fpu();
-double conv2d_calc_gflops(int n, int h, int w, int c, int kw, int kh, int oc);
+const strAvgPoolParam_t pool_param =  
+{
+    POOL_N,  // batch size
+    POOL_IC, // input channels
+    POOL_IH, // input height
+    POOL_IW, // input width
+    POOL_SH, // height-wise stride
+    POOL_SW, // width-wise stride
+    POOL_OC, // output channels
+    POOL_OH, // output height
+    POOL_OW  // output width
+};
 
 int main(int argc, char *argv[])
 {
@@ -100,10 +100,25 @@ int main(int argc, char *argv[])
     double cpu_gflops_fpu;
     double conv2d_gflops;
     double conv2d_time_used;
-    FLOAT_T *pifm = NULL;
-    FLOAT_T *pofm = NULL;
-    FLOAT_T *pwt  = NULL;
-    FLOAT_T *pbs  = NULL;
+
+    FLOAT_T *pbuf_ifm_conv = NULL;
+    FLOAT_T *pbuf_ofm_conv = NULL;
+    FLOAT_T *pbuf_wt_conv  = NULL;
+    FLOAT_T *pbuf_bs_conv  = NULL;
+    FLOAT_T *pbuf_ifm_relu = NULL;
+    FLOAT_T *pbuf_ofm_relu = NULL;
+    FLOAT_T *pbuf_ifm_pool = NULL;
+    FLOAT_T *pbuf_ofm_pool = NULL;
+
+    ssize_t sz_ifm_conv, sz_ofm_conv;
+    ssize_t sz_wt_conv, sz_bs_conv;
+    ssize_t sz_ifm_relu;
+    ssize_t sz_ofm_relu;
+    ssize_t sz_ifm_pool;
+    ssize_t sz_ofm_pool;
+
+    strDimNHWC_t dim_nhwc;
+
     PROF_TMR_DECL();
 
     DEBUG_INFO("example_oplib_conv2d program...\n");
@@ -138,7 +153,7 @@ int main(int argc, char *argv[])
         printf("List information about the FILE(s) "
                "(the current directory by default).\n\n");
         arg_print_glossary(stdout, argtable, "  %-25s %s\n");
-        goto fail;
+        goto failed;
     }
 
     /* special case: '--version' takes precedence error reporting */
@@ -146,7 +161,7 @@ int main(int argc, char *argv[])
     {
         printf("'%s' example program for the \"argtable\" command line argument parser.\n",progname);
         printf("03/07/2022, zhangw\n");
-        goto fail;
+        goto failed;
     }
 
     /* special case: '--debug' takes precedence error reporting */
@@ -162,223 +177,112 @@ int main(int argc, char *argv[])
     cpu_gflops_avx2 = get_cpu_peak_gflops_avx2();
     cpu_gflops_fpu  = get_cpu_peak_gflops_fpu();
 
+    sz_ifm_conv = conv2d_param.param_N *conv2d_param.param_IC*conv2d_param.param_IH*conv2d_param.param_IW*sizeof(FLOAT_T);
+    sz_ofm_conv = conv2d_param.param_N *conv2d_param.param_OC*conv2d_param.param_OH*conv2d_param.param_OW*sizeof(FLOAT_T);
+    sz_wt_conv  = conv2d_param.param_OC*conv2d_param.param_KW*conv2d_param.param_KH*conv2d_param.param_IC*sizeof(FLOAT_T);
+    sz_bs_conv  = conv2d_param.param_OC*sizeof(FLOAT_T);
+    sz_ifm_relu = relu_param.param_N *relu_param.param_IC*relu_param.param_IH*relu_param.param_IW*sizeof(FLOAT_T);
+    sz_ofm_relu = relu_param.param_N *relu_param.param_OC*relu_param.param_OH*relu_param.param_OW*sizeof(FLOAT_T);
+    sz_ifm_pool = pool_param.param_N *pool_param.param_IC*pool_param.param_IH*pool_param.param_IW*sizeof(FLOAT_T);
+    sz_ofm_pool = pool_param.param_N *pool_param.param_OC*pool_param.param_OH*pool_param.param_OW*sizeof(FLOAT_T);
+
+
     //buffer allocation and data preferation
-    pifm = (FLOAT_T*)malloc(IN*IC*IW*IH*sizeof(FLOAT_T));
-    if(pifm == NULL)
-        perror("ifm malloc failed!");
+    pbuf_ifm_conv = (FLOAT_T*)malloc(sz_ifm_conv);
+    if(pbuf_ifm_conv == NULL)
+        perror("pbuf_ifm_conv malloc failed!");
 
-    pwt  = (FLOAT_T*)malloc(OC*KW*KH*IC*sizeof(FLOAT_T));
-    if(pwt == NULL)
-        perror("pwt malloc failed!");
+    pbuf_ofm_conv = (FLOAT_T*)malloc(sz_ofm_conv);
+    if(pbuf_ofm_conv == NULL)
+        perror("pbuf_ofm_conv malloc failed!");
 
-    pofm = (FLOAT_T*)malloc(IN*OC*OW*OH*sizeof(FLOAT_T));
-    if(pofm == NULL)
-        perror("pofm malloc failed!");
+    pbuf_wt_conv = (FLOAT_T*)malloc(sz_wt_conv);
+    if(pbuf_wt_conv == NULL)
+        perror("pbuf_wt_conv malloc failed!");
 
-    n = IN;
-    c = IC;
-    h = IH;
-    w = IW;
-    gen_nhwc_fp32(n, c, h, w, pifm);
-    dump_nhwc_fp32(n, c, h, w, pifm, "ifm", dump_enable);
+    pbuf_bs_conv = (FLOAT_T*)malloc(sz_bs_conv);
+    if(pbuf_bs_conv == NULL)
+        perror("pbuf_bs_conv malloc failed!");
 
-    n = OC;
-    c = IC;
-    h = KH;
-    w = KW;
-    gen_nhwc_fp32(n, c, h, w, pwt);
-    dump_nhwc_fp32(n, c, h, w, pwt, "weight", dump_enable);
+    pbuf_ifm_relu = (FLOAT_T*)malloc(sz_ifm_relu);
+    if(pbuf_ifm_relu == NULL)
+        perror("pbuf_ifm_relu malloc failed!");
+
+    pbuf_ofm_relu = (FLOAT_T*)malloc(sz_ofm_relu);
+    if(pbuf_ofm_relu == NULL)
+        perror("pbuf_ofm_relu malloc failed!");
+
+    pbuf_ifm_pool = (FLOAT_T*)malloc(sz_ifm_pool);
+    if(pbuf_ifm_pool == NULL)
+        perror("pbuf_ifm_pool malloc failed!");
+
+    pbuf_ofm_pool = (FLOAT_T*)malloc(sz_ofm_pool);
+    if(pbuf_ofm_pool == NULL)
+        perror("pbuf_ofm_pool malloc failed!");
+
+    dim_nhwc.n = conv2d_param.param_N ;
+    dim_nhwc.c = conv2d_param.param_IC;
+    dim_nhwc.h = conv2d_param.param_IH;
+    dim_nhwc.w = conv2d_param.param_IW;
+    gen_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv);
+    dump_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv, "pbuf_ifm_conv", dump_enable);
+
+    dim_nhwc.n = conv2d_param.param_OC;
+    dim_nhwc.c = conv2d_param.param_IC;
+    dim_nhwc.h = conv2d_param.param_KH;
+    dim_nhwc.w = conv2d_param.param_KW;
+    gen_nhwc_fp32(&dim_nhwc, pbuf_wt_conv);
+    dump_nhwc_fp32(&dim_nhwc, pbuf_wt_conv, "pbuf_wt_conv", dump_enable);
 
     //conv2d gflops calculation
-    conv2d_gflops = conv2d_calc_gflops(IN, IH, IW, IC, KW, KH, OC);
+    conv2d_gflops = conv2d_calc_gflops(&conv2d_param);
     DEBUG_INFO("conv2d param : N=%d,H=%d,W=%d,C=%d,KW=%d,KH=%d,OC=%d,gflops=[%.6lf]\n", 
-               IN, IH, IW, IC, KW, KH, OC, 
+               conv2d_param.param_N, 
+               conv2d_param.param_IH, 
+               conv2d_param.param_IW, 
+               conv2d_param.param_IC, 
+               conv2d_param.param_KW, 
+               conv2d_param.param_KH, 
+               conv2d_param.param_OC, 
                conv2d_gflops);
 
     //do the conv2d calculation and profiling
     PROF_TMR_START();
-    for(int i=0;i<CONV2D_ITERNUM;i++)
+    for(int i=0; i<CONV2D_ITERNUM; i++)
     {
-        conv2d_3x3_s1(NULL, 
-                pifm, 
-                pofm, 
-                pwt,
-                NULL); 
+        oplib_layer_conv2d_3x3_s1(&conv2d_param, 
+                                   pbuf_ifm_conv, 
+                                   pbuf_ofm_conv, 
+                                   pbuf_wt_conv,
+                                   pbuf_bs_conv); 
     }
     PROF_TMR_END();
     conv2d_time_used = PROF_TMR_VALSEC / CONV2D_ITERNUM;
-    DEBUG_INFO("conv2d_3x3_s1() cost [%lf] seconds in avg within [%d] iters\n", conv2d_time_used, CONV2D_ITERNUM);
-    DEBUG_INFO("conv2d_3x3_s1() calculation profermance is [%lf] gflops/s\n", conv2d_gflops / conv2d_time_used);
+    DEBUG_INFO("oplib_layer_conv2d_3x3_s1() cost [%lf] seconds in avg within [%d] iters\n", conv2d_time_used, CONV2D_ITERNUM);
+    DEBUG_INFO("oplib_layer_conv2d_3x3_s1() calculation profermance is [%lf] gflops/s\n", conv2d_gflops / conv2d_time_used);
 
     //check the result
-    n = IN;
-    c = OC;
-    h = OH;
-    w = OW;
-    dump_nhwc_fp32(n, c, h, w, pofm, "ofm", dump_enable);
+    dim_nhwc.n = conv2d_param.param_N;
+    dim_nhwc.c = conv2d_param.param_OC;
+    dim_nhwc.h = conv2d_param.param_OH;
+    dim_nhwc.w = conv2d_param.param_OW;
+    dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_conv, "pbuf_ofm_conv", dump_enable);
 
     //do program finalization
-    free(pifm);
-    free(pwt);
-    free(pofm);
+    free(pbuf_ifm_conv);
+    free(pbuf_ofm_conv);
+    free(pbuf_wt_conv );
+    free(pbuf_bs_conv );
+    free(pbuf_ifm_relu);
+    free(pbuf_ofm_relu);
+    free(pbuf_ifm_pool);
+    free(pbuf_ofm_pool);
 
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     DEBUG_INFO("program exit!\n");
 
-fail:
+failed:
     /* deallocate each non-null entry in argtable[] */
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
     return 0;
-}
-
-void dump_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf, const char *strTensorName, int enable)
-{
-    int n, c, h, w;
-
-    if(enable)
-    {
-        printf("\n\n<Tensor(%s)[%d,%d,%d,%d]>", strTensorName, N,C,H,W);
-        for(n=0;n<N;++n)
-        {
-            printf("\n*******n[%d]************************************\n", n);
-            for(c=0;c<C;++c)
-            {
-                printf(" ======c[%d]====================================\n", c);
-                for(h=0;h<H;++h)
-                {
-                    printf(" ");
-                    for(w=0;w<W;++w)
-                    {
-                        printf("%.2f ", pbuf[C*W*H*n + C*W*h + C*w + c]);
-                    }
-                    printf("\n");
-                }   
-            }
-        }
-    }
-}
-
-void gen_nhwc_fp32(int N, int C, int H, int W, FLOAT_T *pbuf)
-{
-    FLOAT_T cnt = 1.0;
-    int n, c, h, w;
-
-    for(n=0;n<N;++n)
-    {
-        for(c=0;c<C;++c)
-        {
-            for(h=0;h<H;++h)
-            {
-                for(w=0;w<W;++w)
-                {
-                    pbuf[C*W*H*n + C*W*h + C*w + c] = cnt;
-                    cnt += 0.1;
-                }
-            }   
-        }
-    }
-}
-
-//  convolution operation
-//  apply kernel on input and save results on output
-int conv2d_3x3_s1(strConv2Dparam_t *pParam, 
-              FLOAT_T *pbuf_in, 
-              FLOAT_T *pbuf_out, 
-              FLOAT_T *pbuf_wt,
-              FLOAT_T *pbuf_bs) 
-{
-    int iOW, iOH, iOC;
-    int iKW, iKH, iIC;
-
-    for(iOC = 0; iOC < OC; ++iOC)
-    {
-        for(iOH = 0; iOH < OH; ++iOH)
-        {
-            for(iOW = 0; iOW < OH; ++iOW)
-            {
-                FLOAT_T psum = 0;
-
-                for(iKH = 0; iKH < KH; ++iKH)
-                {
-                    for(iKW = 0; iKW < KW; ++iKW)
-                    {
-                        for(iIC = 0; iIC < OH; ++iIC)
-                        {
-                            int iIW = iOW - (iKW - ((KW+1)/2 - 1));
-                            int iIH = iOH - (iKH - ((KH+1)/2 - 1));
-                            if( (iIW<0) || (iIW>=iOW) || (iIH<0) || (iIH>=iOH) )
-                                continue;
-                            psum += pbuf_in[IC*IW*iIH + IC*iIW + iIC] * 
-                                    pbuf_wt[KH*KW*OC*iOC + IC*KW*iKH + IC*iKW + iIC];
-                        }
-                    }
-                }
-
-                pbuf_out[OC*OW*iOH + OC*iOW + iOC] = psum;
-            }
-        }
-    }
-
-    return 0;
-}
-
-double conv2d_calc_gflops(int n, int h, int w, int c, int kw, int kh, int oc)
-{
-    return 2.0d * n * oc * w * h * kw * kh * c / (1.0*1000*1000*1000);
-}
-
-double get_cpu_peak_gflops_avx2()
-{
-    PROF_TMR_DECL();
-    //DEBUG_INFO("get_cpu_peak_gflops_avx2.........\n");
-
-    PROF_TMR_START();
-    __asm__(
-        "mov $1000000000, %rax;"
-        "vxorps %ymm0, %ymm0, %ymm0;"
-        "vxorps %ymm1, %ymm1, %ymm1;"
-        "vxorps %ymm2, %ymm2, %ymm2;"
-        "vxorps %ymm3, %ymm3, %ymm3;"
-        "loop1:"
-        "vmulps %ymm1, %ymm1, %ymm0;"
-        "vaddps %ymm3, %ymm3, %ymm2;"
-        "subq $0x1, %rax;"
-        "jne loop1;"
-    );
-    PROF_TMR_END();
-
-    DEBUG_INFO("peak avx2 vmul+vadd computation performance(1 thread) is [%lf] GFLOPS\n", (8+8)*1000000000.0/PROF_TMR_VALSEC/1000000000);
-}
-
-double get_cpu_peak_gflops_fpu()
-{
-    PROF_TMR_DECL();
-    //DEBUG_INFO("get_cpu_peak_gflops_fpu.........\n");
-
-    PROF_TMR_START();
-    __asm__(
-        "mov $1000000000, %rax;"
-        "pxor  %xmm0, %xmm0;"
-        "pxor  %xmm1, %xmm1;"
-        "pxor  %xmm2, %xmm2;"
-        "pxor  %xmm3, %xmm3;"
-        "pxor  %xmm4, %xmm4;"
-        "pxor  %xmm5, %xmm5;"
-        "pxor  %xmm6, %xmm6;"
-        "pxor  %xmm7, %xmm7;"
-        "loop2:"
-        "mulss %xmm0, %xmm0;"
-        "mulss %xmm1, %xmm1;"
-        "mulss %xmm2, %xmm2;"
-        "mulss %xmm3, %xmm3;"
-        "addss %xmm4, %xmm4;"
-        "addss %xmm5, %xmm5;"
-        "addss %xmm6, %xmm6;"
-        "addss %xmm7, %xmm7;"
-        "subq $0x1, %rax;"
-        "jne loop2;"
-    );
-    PROF_TMR_END();
-
-    DEBUG_INFO("peak fpu computation performance(1 thread) is [%lf] GFLOPS\n", (4+4)*1000000000.0/PROF_TMR_VALSEC/1000000000);
 }

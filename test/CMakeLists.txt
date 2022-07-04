@@ -6,4 +6,4 @@ link_directories(
 aux_source_directory(. TEST_SRCS)
 
 add_executable(test_oplib ${TEST_SRCS} ${GTEST_ROOT}/src/gtest_main.cc)
-target_link_libraries(test_oplib oplib gtest gtest_main)
+target_link_libraries(test_oplib oplib gtest gtest_main libmkl_intel_ilp64.a libmkl_sequential.a libmkl_core.a)
