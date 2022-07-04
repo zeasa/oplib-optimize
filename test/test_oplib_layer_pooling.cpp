@@ -1,14 +1,20 @@
 #include "gtest/gtest.h"
 #include "oplib_common.h"
 #include "oplib_interface.h"
+#include "test_oplib_layer_testcase.h"
 
 
 TEST(pooling, test0)
 {
-    ASSERT_EQ(7, oplib_conv2d_demo(3, 4));
-}
+    int i;
 
-TEST(pooling, test1)
-{
-    ASSERT_EQ(15, oplib_conv2d_demo(7, 8));
+    oplib_layer_avgpool_forward(&pool_param, 
+                              ofm_relu_golden, 
+                              ofm_pool);
+
+    for(i=0; i<OFM_POOL_SZ;++i)
+    {
+        ASSERT_FLOAT_EQ(ofm_pool[i], ofm_pool_golden[i]);
+    }
+    
 }

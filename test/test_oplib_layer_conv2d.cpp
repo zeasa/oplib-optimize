@@ -1,14 +1,20 @@
 #include "gtest/gtest.h"
 #include "oplib_common.h"
 #include "oplib_interface.h"
-
+#include "test_oplib_layer_testcase.h"
 
 TEST(conv2d, test0)
 {
-    ASSERT_EQ(7, oplib_conv2d_demo(3, 4));
-}
+    int i;
 
-TEST(conv2d, test1)
-{
-    ASSERT_EQ(15, oplib_conv2d_demo(7, 8));
+    oplib_layer_conv2d_3x3_s1_forward(&conv2d_param, 
+                                   ifm_conv, 
+                                   ofm_conv, 
+                                   wt_conv,
+                                   bs_conv);
+    for(i=0; i<OFM_CONV_SZ;++i)
+    {
+        ASSERT_FLOAT_EQ(ofm_conv[i], ofm_conv_golden[i]);
+    }
+    
 }

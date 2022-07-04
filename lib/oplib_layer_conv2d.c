@@ -12,44 +12,53 @@ void oplib_layer_conv2d_3x3_s1_forward(const strConv2DParam_t *pParam,
     assert((pParam != NULL) && (pbuf_in != NULL) && 
            (pbuf_out != NULL) && (pbuf_wt) && (pbuf_bs));
     
-    int OC = pParam->param_OC;
-    int OH = pParam->param_OH;
-    int OW = pParam->param_OW;
-    int KH = pParam->param_KH;
-    int KW = pParam->param_KW;
-    int IC = pParam->param_IC;
-    int IH = pParam->param_IH;
-    int IW = pParam->param_IW;
-    int i_ow, i_oh, i_oc;
-    int i_kw, i_kh, i_ic;
+    int N  = pParam->param_N ;// batch size
+    int OC = pParam->param_OC;// output channels
+    int OH = pParam->param_OH;// output height
+    int OW = pParam->param_OW;// output width
+    int KH = pParam->param_KH;// weights height
+    int KW = pParam->param_KW;// weights width
+    int IC = pParam->param_IC;// input  channels
+    int IH = pParam->param_IH;// input  height
+    int IW = pParam->param_IW;// input  width
+    int n;
+    int ow, oh, oc;
+    int kw, kh, ic;
 
-    for(i_oc = 0; i_oc < OC; ++i_oc)
+    for(n = 0; n < N; ++n)
     {
-        for(i_oh = 0; i_oh < OH; ++i_oh)
+        for(oc = 0; oc < OC; ++oc)
         {
-            for(i_ow = 0; i_ow < OW; ++i_ow)
+            for(oh = 0; oh < OH; ++oh)
             {
-                FLOAT_T psum = 0;
-
-                for(i_kh = 0; i_kh < KH; ++i_kh)
+                for(ow = 0; ow < OW; ++ow)
                 {
-                    for(i_kw = 0; i_kw < KW; ++i_kw)
+                    FLOAT_T psum = 0;
+
+                    for(kh = 0; kh < KH; ++kh)
                     {
-                        for(i_ic = 0; i_ic < IC; ++i_ic)
+                        for(kw = 0; kw < KW; ++kw)
                         {
-                            int i_iw = i_ow - (i_kw - ((KW+1)/2 - 1));
-                            int i_ih = i_oh - (i_kh - ((KH+1)/2 - 1));
-                            if( (i_iw<0) || (i_iw>=IW) || (i_ih<0) || (i_ih>=IH) )
-                                continue;
-                            psum += pbuf_in[IC*IW*i_ih + IC*i_iw + i_ic] * 
-                                    pbuf_wt[KH*KW*OC*i_oc + IC*KW*i_kh + IC*i_kw + i_ic];
+                            for(ic = 0; ic < IC; ++ic)
+                            {
+                                /*calculate the source data memory location*/
+                                int iw = ow + (kw - ((KW+1)/2 - 1));
+                                int ih = oh + (kh - ((KH+1)/2 - 1));
+                                if( (iw<0) || (iw>=IW) || (ih<0) || (ih>=IH) )
+                                    continue;
+
+                                /*fetch source data from memory and do the real calculation*/
+                                psum += pbuf_in[IC*IW*IH*n + IC*IW*ih + IC*iw + ic] * 
+                                        pbuf_wt[KH*KW*OC*oc + IC*KW*kh + IC*kw + ic];
+                            }
                         }
                     }
-                }
 
-                pbuf_out[OC*OW*i_oh + OC*i_ow + i_oc] = psum;
+                    /*add bias store the result to memory*/
+                    pbuf_out[OC*OW*OH*n + OC*OW*oh + OC*ow + oc] = psum + pbuf_bs[oc];
+                }
             }
-        }
+        }        
     }
 
 }

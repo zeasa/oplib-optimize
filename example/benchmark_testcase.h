@@ -26,9 +26,9 @@
 #define  RELU_OW	(RELU_IW)  // output width
 
 #define  POOL_N		(RELU_N)   // batch size
-#define  POOL_IC	(RELU_IC)  // input channels
-#define  POOL_IH	(RELU_IH)  // input height
-#define  POOL_IW	(RELU_IW)  // input width
+#define  POOL_IC	(RELU_OC)  // input channels
+#define  POOL_IH	(RELU_OH)  // input height
+#define  POOL_IW	(RELU_OW)  // input width
 #define  POOL_KH	(2)        // kernel height
 #define  POOL_KW	(2)        // kernel width
 #define  POOL_SH	(2)        // height-wise stride

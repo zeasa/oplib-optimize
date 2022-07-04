@@ -5,6 +5,7 @@ void oplib_layer_avgpool_forward(const strAvgPoolParam_t *pParam, const FLOAT_T 
 {
     assert((pParam != NULL) && (pbuf_in != NULL) && (pbuf_out != NULL));
 
+    int N  = pParam->param_N ;
     int IC = pParam->param_IC;
     int IH = pParam->param_IH;
     int IW = pParam->param_IW;
@@ -15,37 +16,39 @@ void oplib_layer_avgpool_forward(const strAvgPoolParam_t *pParam, const FLOAT_T 
     int KW = pParam->param_KW;
     int SH = pParam->param_SH;
     int SW = pParam->param_SW;
-    int oc, oh, ow, kh, kw;
-    int sz_window = KH*KW;
+    int n, oc, oh, ow, kh, kw;
+    int pooling_window = KH*KW;
 
-
-    for(oh = 0; oh < OH; ++oh)
+    for(n = 0; n < N; ++n)
     {
-        for(ow = 0; ow < OW; ++ow)
+        for(oh = 0; oh < OH; ++oh)
         {
-            for(oc = 0; oc < OC; ++oc)
+            for(ow = 0; ow < OW; ++ow)
             {
-                float psum = 0;
-
-                for(kh = 0; kh < KH; ++kh)
+                for(oc = 0; oc < OC; ++oc)
                 {
-                    for(kw = 0; kw < KW; ++kw)
-                    {
-                        /*calculate the source data memory location*/
-                        int iw = ow*SW + kw;
-                        int ih = oh*SH + kh;
-                        if( (iw>=IW) || (ih>=IH) )
-                            continue;
-                        
-                        /*fetch source data from memory and do the real calculation*/
-                        psum += pbuf_in[IC*IW*ih + IC*iw + oc];
-                    }
-                }
+                    float psum = 0;
 
-                /*store the result to memory*/
-                pbuf_out[OC*OW*oh + OC*ow + oc] = psum / sz_window;
+                    for(kh = 0; kh < KH; ++kh)
+                    {
+                        for(kw = 0; kw < KW; ++kw)
+                        {
+                            /*calculate the source data memory location*/
+                            int iw = ow*SW + kw;
+                            int ih = oh*SH + kh;
+                            if( (iw>=IW) || (ih>=IH) )
+                                continue;
+                            
+                            /*fetch source data from memory and do the real calculation*/
+                            psum += pbuf_in[IC*IW*IH*n + IC*IW*ih + IC*iw + oc];
+                        }
+                    }
+
+                    /*store the result to memory*/
+                    pbuf_out[OC*OW*OH*n + OC*OW*oh + OC*ow + oc] = psum / pooling_window;
+                }
             }
-        }
+        }        
     }
 
 }

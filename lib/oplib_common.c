@@ -1,6 +1,10 @@
 #include "oplib_common.h"
 #include "oplib_interface.h"
 
+#define N_LIMIT     (4)
+#define C_LIMIT     (2)
+#define H_LIMIT     (8)
+#define W_LIMIT     (8)
 
 void oplib_dump_nhwc_fp32(const strDimNHWC_t *pDim, const FLOAT_T *pbuf, const char *strTensorName, int enable)
 {
@@ -11,28 +15,83 @@ void oplib_dump_nhwc_fp32(const strDimNHWC_t *pDim, const FLOAT_T *pbuf, const c
     int H = pDim->h;
     int W = pDim->w;
     int i_n, i_c, i_h, i_w;
+    
+    int n_once_flag = 0;
+    int c_once_flag = 0;
+    int h_once_flag = 0;
+    int w_once_flag = 0;
 
     if(enable)
     {
         printf("\n\n<Tensor(%s)[%d,%d,%d,%d]>", strTensorName, N,C,H,W);
         for(i_n = 0; i_n < N; ++i_n)
         {
-            printf("\n*******n[%d]************************************\n", i_n);
-            for(i_c = 0; i_c < C; ++i_c)
+            if((i_n < N_LIMIT) || (i_n == (N-1)) )
             {
-                printf(" ======i_c[%d]====================================\n", i_c);
-                for(i_h = 0; i_h < H; ++i_h)
+                c_once_flag = 0;
+                printf("\n*******n[%d]************************************\n", i_n);
+                for(i_c = 0; i_c < C; ++i_c)
                 {
-                    printf(" ");
-                    for(i_w = 0; i_w < W; ++i_w)
+                    if((i_c < C_LIMIT) || (i_c == (C-1)) )
                     {
-                        printf("%.2f ", pbuf[C*W*H*i_n + C*W*i_h + C*i_w + i_c]);
+                        h_once_flag = 0;
+                        printf(" ======c[%d]====================================\n", i_c);
+                        for(i_h = 0; i_h < H; ++i_h)
+                        {
+                            if((i_h < H_LIMIT) || (i_h == (H-1)) )
+                            {
+                                w_once_flag = 0;
+                                printf(" ");
+                                for(i_w = 0; i_w < W; ++i_w)
+                                {
+                                    if((i_w < W_LIMIT) || (i_w == (W-1)) )
+                                    {
+                                        printf("%.2f ", pbuf[C*W*H*i_n + C*W*i_h + C*i_w + i_c]);
+                                    }
+                                    else
+                                    {
+                                        if(w_once_flag == 0)
+                                        {
+                                            w_once_flag = 1;
+                                            printf("... ");
+                                        }
+                                    }
+                                }
+                                printf("\n");
+                            }
+                            else
+                            {
+                                if(h_once_flag == 0)
+                                {
+                                    h_once_flag = 1;
+                                    printf(" ....\n");
+                                }
+                            }
+                        }  
                     }
-                    printf("\n");
-                }   
+                    else
+                    {
+                        if(c_once_flag == 0)
+                        {
+                            c_once_flag = 1;
+                            printf("\n .....\n\n");
+                        }
+                    }
+
+                }
             }
+            else
+            {
+                if(n_once_flag == 0)
+                {
+                    n_once_flag = 1;
+                    printf("\n\n......\n\n");
+                }
+            }
+
         }
     }
+    printf("\n\n");
 }
 
 void oplib_gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
@@ -44,7 +103,7 @@ void oplib_gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
     int H = pDim->h;
     int W = pDim->w;
     int i_n, i_c, i_h, i_w;
-    FLOAT_T cnt = 1.0;
+    FLOAT_T cnt = -0.8;
 
     for(i_n=0;i_n<N;++i_n)
     {
@@ -56,6 +115,8 @@ void oplib_gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
                 {
                     pbuf[C*W*H*i_n + C*W*i_h + C*i_w + i_c] = cnt;
                     cnt += 0.1;
+                    if(cnt >= 0.8)
+                        cnt = -0.8;
                 }
             }   
         }

@@ -256,14 +256,12 @@ int main(int argc, char *argv[])
     PROF_TMR_END();
     pool_time_used = PROF_TMR_VALSEC / POOL_ITERNUM;
 
-
     //check the result
     dim_nhwc.n = pool_param.param_N;
     dim_nhwc.c = pool_param.param_OC;
     dim_nhwc.h = pool_param.param_OH;
     dim_nhwc.w = pool_param.param_OW;
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_pool, "pbuf_ofm_pool", dump_enable);
-
 
 
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
