@@ -1,7 +1,7 @@
 #include "oplib_common.h"
 #include "oplib_interface.h"
 
-int oplib_layer_relu(const strReluParam_t *pParam, FLOAT_T *pbuf_in, FLOAT_T *pbuf_out)
+void oplib_layer_relu_forward(const strReluParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out)
 {
     assert((pParam != NULL) && (pbuf_in != NULL) && (pbuf_out != NULL));
     
@@ -16,9 +16,10 @@ int oplib_layer_relu(const strReluParam_t *pParam, FLOAT_T *pbuf_in, FLOAT_T *pb
     }
 }
 
-//double conv2d_calc_gflops(const strConv2DParam_t *pParam)
-//{
-//    return 2.0d * pParam->param_N * pParam->param_OC * pParam->param_OW * 
-//           pParam->param_OH * pParam->param_KW * pParam->param_KH * pParam->param_IC / (1.0*1000*1000*1000);
-//}
+double oplib_layer_relu_report_property(const strReluParam_t *pParam)
+{
+    assert(pParam != NULL);
 
+
+    return 0.0;
+}

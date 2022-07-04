@@ -1,7 +1,7 @@
-
 #include "argtable3.h"
 #include "oplib_common.h"
 #include "oplib_interface.h"
+#include "benchmark_testcase.h"
 
 #define __ARGTABLE
 #define CONV2D_ITERNUM      (1)
@@ -10,42 +10,6 @@ struct arg_lit  *help;
 struct arg_lit  *version;
 struct arg_lit  *debug;
 struct arg_end  *argend;
-
-#define  CONV_N		(2)        // batch size
-#define  CONV_IC	(64)       // input channels
-#define  CONV_IH	(256)      // input height
-#define  CONV_IW	(256)      // input width
-#define  CONV_OC	(64)       // output channels
-#define  CONV_OH	(CONV_IH)  // output height
-#define  CONV_OW	(CONV_IW)  // output width
-#define  CONV_KH	(3)        // weights height
-#define  CONV_KW	(3)        // weights width
-#define  CONV_PT	(1)        // padding: left
-#define  CONV_PB	(1)        // padding: right
-#define  CONV_PL	(1)        // padding: left
-#define  CONV_PR	(1)        // padding: right
-#define  CONV_SH	(1)        // height-wise stride
-#define  CONV_SW	(1)        // width-wise stride
-
-#define  RELU_N		(CONV_N)   // batch size
-#define  RELU_IC	(CONV_OC)  // input channels
-#define  RELU_IH	(CONV_OH)  // input height
-#define  RELU_IW	(CONV_OW)  // input width
-#define  RELU_OC	(RELU_IC)  // output channels
-#define  RELU_OH	(RELU_IH)  // output height
-#define  RELU_OW	(RELU_IW)  // output width
-
-#define  POOL_N		(RELU_N)   // batch size
-#define  POOL_IC	(RELU_IC)  // input channels
-#define  POOL_IH	(RELU_IH)  // input height
-#define  POOL_IW	(RELU_IW)  // input width
-#define  POOL_KH	(2)        // kernel height
-#define  POOL_KW	(2)        // kernel width
-#define  POOL_SH	(2)        // height-wise stride
-#define  POOL_SW	(2)        // width-wise stride
-#define  POOL_OC	(POOL_IC)  // input channels
-#define  POOL_OH	(POOL_IH/POOL_SH)  // input height
-#define  POOL_OW	(POOL_IW/POOL_SW)  // input width
 
 const strConv2DParam_t conv2d_param = 
 {
@@ -121,7 +85,7 @@ int main(int argc, char *argv[])
 
     PROF_TMR_DECL();
 
-    DEBUG_INFO("example_oplib_conv2d program...\n");
+    DEBUG_INFO("benchmark_net_conv2d_relu_pooling_nofuse...\n");
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
     //argment processing
@@ -174,8 +138,8 @@ int main(int argc, char *argv[])
     DEBUG_INFO("dump mode = [%s]\n", dump_enable ? "true" : "false");
 
     //cpu performance detection
-    cpu_gflops_avx2 = get_cpu_peak_gflops_avx2();
-    cpu_gflops_fpu  = get_cpu_peak_gflops_fpu();
+    cpu_gflops_avx2 = oplib_get_cpu_peak_gflops_avx2();
+    cpu_gflops_fpu  = oplib_get_cpu_peak_gflops_fpu();
 
     sz_ifm_conv = conv2d_param.param_N *conv2d_param.param_IC*conv2d_param.param_IH*conv2d_param.param_IW*sizeof(FLOAT_T);
     sz_ofm_conv = conv2d_param.param_N *conv2d_param.param_OC*conv2d_param.param_OH*conv2d_param.param_OW*sizeof(FLOAT_T);
@@ -225,42 +189,33 @@ int main(int argc, char *argv[])
     dim_nhwc.h = conv2d_param.param_IH;
     dim_nhwc.w = conv2d_param.param_IW;
     dim_nhwc.c = conv2d_param.param_IC;
-    gen_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv);
-    dump_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv, "pbuf_ifm_conv", dump_enable);
+    oplib_gen_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv);
+    oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ifm_conv, "pbuf_ifm_conv", dump_enable);
 
     DEBUG_INFO("generate test data for [pbuf_wt_conv]!\n");
     dim_nhwc.n = conv2d_param.param_OC;
     dim_nhwc.h = conv2d_param.param_KH;
     dim_nhwc.w = conv2d_param.param_KW;
     dim_nhwc.c = conv2d_param.param_IC;
-    gen_nhwc_fp32(&dim_nhwc, pbuf_wt_conv);
-    dump_nhwc_fp32(&dim_nhwc, pbuf_wt_conv, "pbuf_wt_conv", dump_enable);
+    oplib_gen_nhwc_fp32(&dim_nhwc, pbuf_wt_conv);
+    oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_wt_conv, "pbuf_wt_conv", dump_enable);
 
     DEBUG_INFO("generate test data for [pbuf_bs_conv]!\n");
     dim_nhwc.n = 1;
     dim_nhwc.h = 1;
     dim_nhwc.w = 1;
     dim_nhwc.c = conv2d_param.param_OC;
-    gen_nhwc_fp32(&dim_nhwc, pbuf_bs_conv);
-    dump_nhwc_fp32(&dim_nhwc, pbuf_bs_conv, "pbuf_bs_conv", dump_enable);
+    oplib_gen_nhwc_fp32(&dim_nhwc, pbuf_bs_conv);
+    oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_bs_conv, "pbuf_bs_conv", dump_enable);
 
-    //conv2d gflops calculation
-    conv2d_gflops = conv2d_calc_gflops(&conv2d_param);
-    DEBUG_INFO("conv2d param : N=[%d],H=[%d],W=[%d],C=[%d],KW=[%d],KH=[%d],OC=[%d],gflops=[%.6lf]\n", 
-               conv2d_param.param_N, 
-               conv2d_param.param_IH, 
-               conv2d_param.param_IW, 
-               conv2d_param.param_IC, 
-               conv2d_param.param_KW, 
-               conv2d_param.param_KH, 
-               conv2d_param.param_OC, 
-               conv2d_gflops);
+    //conv2d gflops calculation and property report
+    conv2d_gflops = oplib_layer_conv2d_3x3_s1_report_property(&conv2d_param);
 
     //do the conv2d calculation and profiling
     PROF_TMR_START();
     for(int i=0; i<CONV2D_ITERNUM; i++)
     {
-        oplib_layer_conv2d_3x3_s1(&conv2d_param, 
+        oplib_layer_conv2d_3x3_s1_forward(&conv2d_param, 
                                    pbuf_ifm_conv, 
                                    pbuf_ofm_conv, 
                                    pbuf_wt_conv,
@@ -276,7 +231,7 @@ int main(int argc, char *argv[])
     dim_nhwc.c = conv2d_param.param_OC;
     dim_nhwc.h = conv2d_param.param_OH;
     dim_nhwc.w = conv2d_param.param_OW;
-    dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_conv, "pbuf_ofm_conv", dump_enable);
+    oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_conv, "pbuf_ofm_conv", dump_enable);
 
     //do program finalization
     free(pbuf_ifm_conv);

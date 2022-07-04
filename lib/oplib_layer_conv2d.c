@@ -3,11 +3,11 @@
 
 //  convolution operation
 //  apply kernel on input and save results on output
-int oplib_layer_conv2d_3x3_s1(const strConv2DParam_t *pParam, 
-              FLOAT_T *pbuf_in, 
-              FLOAT_T *pbuf_out, 
-              FLOAT_T *pbuf_wt,
-              FLOAT_T *pbuf_bs) 
+void oplib_layer_conv2d_3x3_s1_forward(const strConv2DParam_t *pParam, 
+              const FLOAT_T *pbuf_in, 
+                    FLOAT_T *pbuf_out, 
+              const FLOAT_T *pbuf_wt,
+              const FLOAT_T *pbuf_bs) 
 {
     assert((pParam != NULL) && (pbuf_in != NULL) && 
            (pbuf_out != NULL) && (pbuf_wt) && (pbuf_bs));
@@ -52,53 +52,24 @@ int oplib_layer_conv2d_3x3_s1(const strConv2DParam_t *pParam,
         }
     }
 
-    return 0;
 }
 
-int oplib_layer_avgpool_2x2_s1(const strAvgPoolParam_t *pParam, FLOAT_T *pbuf_in, FLOAT_T *pbuf_out)
+double oplib_layer_conv2d_3x3_s1_report_property(const strConv2DParam_t *pParam)
 {
-    int IC = pParam->param_IC;
-    int IH = pParam->param_IH;
-    int IW = pParam->param_IW;
-    int ic, ih, iw;
+    assert(pParam != NULL);
+    double gflops = 2.0d * pParam->param_N * pParam->param_OC * pParam->param_OW * 
+           pParam->param_OH * pParam->param_KW * pParam->param_KH * pParam->param_IC / (1.0*1000*1000*1000);;
 
-    for(ic = 0; ic < IC; ++ic)
-    {
-        for(ih = 0; ih < IH; ++ih)
-        {
-            for(iw = 0; iw < IW; ++iw)
-            {
-                
-            }
-        }
-    }
-}
+    DEBUG_INFO("oplib_layer_conv2d_3x3_s1 param : N=[%d],H=[%d],W=[%d],C=[%d],KW=[%d],KH=[%d],OC=[%d],gflops=[%.6lf]\n", 
+               pParam->param_N, 
+               pParam->param_IH, 
+               pParam->param_IW, 
+               pParam->param_IC, 
+               pParam->param_KW, 
+               pParam->param_KH, 
+               pParam->param_OC, 
+               gflops);
 
-int oplib_layer_relu(const strReluParam_t *pParam, FLOAT_T *pbuf_in, FLOAT_T *pbuf_out)
-{
-    int IC = pParam->param_IC;
-    int IH = pParam->param_IH;
-    int IW = pParam->param_IW;
-    int i;
-
-    for(i=0; i<IC*IH*IW; ++i)
-    {
-        pbuf_out[i] = (pbuf_in[i] <= 0) ? 0 : pbuf_in[i];
-    }
-}
-
-int oplib_conv2d_avgpool_relu(const strConv2DParam_t *pParam, 
-              FLOAT_T *pbuf_in, 
-              FLOAT_T *pbuf_out, 
-              FLOAT_T *pbuf_wt,
-              FLOAT_T *pbuf_bs)
-{
-
-}
-
-double conv2d_calc_gflops(const strConv2DParam_t *pParam)
-{
-    return 2.0d * pParam->param_N * pParam->param_OC * pParam->param_OW * 
-           pParam->param_OH * pParam->param_KW * pParam->param_KH * pParam->param_IC / (1.0*1000*1000*1000);
+    return gflops;
 }
 

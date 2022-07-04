@@ -1,5 +1,5 @@
-#ifndef _OPLIB_CONV2D_H__
-#define _OPLIB_CONV2D_H__
+#ifndef _OPLIB_INTERFACE_H__
+#define _OPLIB_INTERFACE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,18 +60,39 @@ typedef struct
 }strAvgPoolParam_t;
 
 /*common interface*/
-void dump_nhwc_fp32(const strDimNHWC_t *p_dim, FLOAT_T *pbuf, const char *strTensorName, int enable);
-void gen_nhwc_fp32(const strDimNHWC_t *p_dim, FLOAT_T *pbuf);
-double get_cpu_peak_gflops_avx2();
-double get_cpu_peak_gflops_fpu();
+void   oplib_dump_nhwc_fp32(const strDimNHWC_t *p_dim, const FLOAT_T *pbuf, const char *strTensorName, int enable);
+void   oplib_gen_nhwc_fp32(const strDimNHWC_t *p_dim, FLOAT_T *pbuf);
+double oplib_get_cpu_peak_gflops_avx2();
+double oplib_get_cpu_peak_gflops_fpu();
 
 /*layer interface*/
-int  oplib_layer_conv2d_3x3_s1(const strConv2DParam_t *pParam, 
-              FLOAT_T *pbuf_in, 
-              FLOAT_T *pbuf_out, 
-              FLOAT_T *pbuf_wt,
-              FLOAT_T *pbuf_bs);
-double conv2d_calc_gflops(const strConv2DParam_t *pParam);
+/*conv2d layer*/
+void   oplib_layer_conv2d_3x3_s1_forward(const strConv2DParam_t *pParam, 
+              const FLOAT_T *pbuf_in, 
+                    FLOAT_T *pbuf_out, 
+              const FLOAT_T *pbuf_wt,
+              const FLOAT_T *pbuf_bs);
+double oplib_layer_conv2d_3x3_s1_report_property(const strConv2DParam_t *pParam);
+
+/*relu layer*/
+void   oplib_layer_relu_forward(const strReluParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out);
+double oplib_layer_relu_report_property(const strReluParam_t *pParam);
+
+/*avgpool layer*/
+void   oplib_layer_avgpool_forward(const strAvgPoolParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out);
+double oplib_layer_avgpool_report_property(const strAvgPoolParam_t *pParam);
+
+/*fused conv2d_relu_pooling layer*/
+void oplib_layer_fused_conv2d_relu_avgpool_forward(const strConv2DParam_t *pParam_conv, 
+              const strReluParam_t *pParam_relu, 
+              const strAvgPoolParam_t *pParam_pool,
+              const FLOAT_T *pbuf_in, 
+                    FLOAT_T *pbuf_out, 
+              const FLOAT_T *pbuf_wt,
+              const FLOAT_T *pbuf_bs);
+double oplib_layer_fused_conv2d_relu_avgpool_report_property(const strConv2DParam_t *pParam_conv, 
+              const strReluParam_t *pParam_relu, 
+              const strAvgPoolParam_t *pParam_pool);
 
 /*other interface*/
 int oplib_conv2d_demo(int a, int b);
@@ -79,4 +100,4 @@ int oplib_conv2d_demo(int a, int b);
 #ifdef __cplusplus
 }
 #endif
-#endif/*_OPLIB_CONV2D_H__*/
+#endif/*_OPLIB_INTERFACE_H__*/

@@ -2,8 +2,10 @@
 #include "oplib_interface.h"
 
 
-void dump_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf, const char *strTensorName, int enable)
+void oplib_dump_nhwc_fp32(const strDimNHWC_t *pDim, const FLOAT_T *pbuf, const char *strTensorName, int enable)
 {
+    assert((pDim != NULL) && (pbuf != NULL));
+    
     int N = pDim->n;
     int C = pDim->c;
     int H = pDim->h;
@@ -33,8 +35,10 @@ void dump_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf, const char *strTens
     }
 }
 
-void gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
+void oplib_gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
 {
+    assert((pDim != NULL) && (pbuf != NULL));
+
     int N = pDim->n;
     int C = pDim->c;
     int H = pDim->h;
@@ -58,7 +62,7 @@ void gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
     }
 }
 
-double get_cpu_peak_gflops_avx2()
+double oplib_get_cpu_peak_gflops_avx2()
 {
     PROF_TMR_DECL();
     //DEBUG_INFO("get_cpu_peak_gflops_avx2.........\n");
@@ -81,7 +85,7 @@ double get_cpu_peak_gflops_avx2()
     DEBUG_INFO("peak avx2 vmul+vadd computation performance(1 thread) is [%lf] GFLOPS\n", (8+8)*1000000000.0/PROF_TMR_VALSEC/1000000000);
 }
 
-double get_cpu_peak_gflops_fpu()
+double oplib_get_cpu_peak_gflops_fpu()
 {
     PROF_TMR_DECL();
     //DEBUG_INFO("get_cpu_peak_gflops_fpu.........\n");
