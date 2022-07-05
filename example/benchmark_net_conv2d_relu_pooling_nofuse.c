@@ -5,10 +5,6 @@
 
 #define __ARGTABLE
 
-#define CONV_ITERNUM        (1)
-#define RELU_ITERNUM        (1000)
-#define POOL_ITERNUM        (500)
-
 struct arg_lit  *help;
 struct arg_lit  *version;
 struct arg_lit  *debug;
@@ -66,12 +62,15 @@ int main(int argc, char *argv[])
     double cpu_gflops_avx2;
     double cpu_gflops_fpu;
 
-    double conv2d_gflops;
+    double conv_gflops;
     double relu_gflops;
     double pool_gflops;
-    double conv2d_time_used;
+    double conv_time_used;
     double relu_time_used;
     double pool_time_used;
+    double conv_omp_time_used;
+    double relu_omp_time_used;
+    double pool_omp_time_used;
 
     FLOAT_T *pbuf_ifm_conv = NULL;
     FLOAT_T *pbuf_ofm_conv = NULL;
@@ -217,24 +216,36 @@ int main(int argc, char *argv[])
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_bs_conv, "pbuf_bs_conv", dump_enable);
 
     //gflops calculation and property report
-    conv2d_gflops = oplib_layer_conv2d_3x3_s1_report_property(&conv2d_param);
+    conv_gflops = oplib_layer_conv2d_s1_report_property(&conv2d_param);
     relu_gflops   = oplib_layer_relu_report_property(&relu_param);
     pool_gflops   = oplib_layer_avgpool_report_property(&pool_param);
 
-    //do the conv2d calculation and profiling
+    //do the conv2d calculation and profiling///////////////////////////////////
     PROF_TMR_START();
     for(int i=0; i<CONV_ITERNUM; i++)
     {
-        oplib_layer_conv2d_3x3_s1_forward(&conv2d_param, 
+        oplib_layer_conv2d_s1_forward(&conv2d_param, 
                                    pbuf_ifm_conv, 
                                    pbuf_ofm_conv, 
                                    pbuf_wt_conv,
                                    pbuf_bs_conv); 
     }
     PROF_TMR_END();
-    conv2d_time_used = PROF_TMR_VALSEC / CONV_ITERNUM;
+    conv_time_used = PROF_TMR_VALSEC / CONV_ITERNUM;
 
-    //do the conv2d calculation and profiling
+    PROF_TMR_START();
+    for(int i=0; i<CONV_ITERNUM; i++)
+    {
+        oplib_layer_conv2d_s1_forward_omp(&conv2d_param, 
+                                   pbuf_ifm_conv, 
+                                   pbuf_ofm_conv, 
+                                   pbuf_wt_conv,
+                                   pbuf_bs_conv); 
+    }
+    PROF_TMR_END();
+    conv_omp_time_used = PROF_TMR_VALSEC / CONV_ITERNUM;
+
+    //do the conv2d calculation and profiling/////////////////////////////////
     PROF_TMR_START();
     for(int i=0; i<RELU_ITERNUM; i++)
     {
@@ -245,7 +256,17 @@ int main(int argc, char *argv[])
     PROF_TMR_END();
     relu_time_used = PROF_TMR_VALSEC / RELU_ITERNUM;
 
-    //do the conv2d calculation and profiling
+    PROF_TMR_START();
+    for(int i=0; i<RELU_ITERNUM; i++)
+    {
+        oplib_layer_relu_forward_omp(&relu_param, 
+                                   pbuf_ofm_conv, 
+                                   pbuf_ofm_relu); 
+    }
+    PROF_TMR_END();
+    relu_omp_time_used = PROF_TMR_VALSEC / RELU_ITERNUM;
+
+    //do the conv2d calculation and profiling/////////////////////////////////
     PROF_TMR_START();
     for(int i=0; i<POOL_ITERNUM; i++)
     {
@@ -256,7 +277,16 @@ int main(int argc, char *argv[])
     PROF_TMR_END();
     pool_time_used = PROF_TMR_VALSEC / POOL_ITERNUM;
 
-    //check the result
+    PROF_TMR_START();
+    for(int i=0; i<POOL_ITERNUM; i++)
+    {
+        oplib_layer_avgpool_forward_omp(&pool_param, 
+                                   pbuf_ofm_relu, 
+                                   pbuf_ofm_pool); 
+    }
+    PROF_TMR_END();
+    pool_omp_time_used = PROF_TMR_VALSEC / POOL_ITERNUM;
+    //check the result////////////////////////////////////////////////////////
     dim_nhwc.n = pool_param.param_N;
     dim_nhwc.c = pool_param.param_OC;
     dim_nhwc.h = pool_param.param_OH;
@@ -266,13 +296,17 @@ int main(int argc, char *argv[])
 
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
-    DEBUG_INFO("report : oplib_layer_conv2d_3x3_s1 cost [%lf] seconds in avg within [%d] iters\n", conv2d_time_used, CONV_ITERNUM);
-    DEBUG_INFO("report : oplib_layer_relu          cost [%lf] seconds in avg within [%d] iters\n", relu_time_used,   RELU_ITERNUM);
-    DEBUG_INFO("report : oplib_layer_avgpool       cost [%lf] seconds in avg within [%d] iters\n", pool_time_used,   POOL_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_conv2d_s1     cost [%lf] seconds in avg within [%d] iters\n", conv_time_used, CONV_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_relu          cost [%lf] seconds in avg within [%d] iters\n", relu_time_used, RELU_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_avgpool       cost [%lf] seconds in avg within [%d] iters\n", pool_time_used, POOL_ITERNUM);
 
-    DEBUG_INFO("report : oplib_layer_conv2d_3x3_s1 calculation profermance is [%lf] GFLOPS/s\n", conv2d_gflops / conv2d_time_used);
-    DEBUG_INFO("report : oplib_layer_relu          calculation profermance is [%lf] GFLOPS/s\n", relu_gflops   / relu_time_used);
-    DEBUG_INFO("report : oplib_layer_avgpool       calculation profermance is [%lf] GFLOPS/s\n", pool_gflops   / pool_time_used);
+    DEBUG_INFO("report : oplib_layer_conv2d_s1_omp cost [%lf] seconds in avg within [%d] iters\n", conv_omp_time_used, CONV_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_relu_omp      cost [%lf] seconds in avg within [%d] iters\n", relu_omp_time_used, RELU_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_avgpool_omp   cost [%lf] seconds in avg within [%d] iters\n", pool_omp_time_used, POOL_ITERNUM);
+
+    DEBUG_INFO("report : oplib_layer_conv2d_s1     calculation profermance is [%lf] GFLOPS/s\n", conv_gflops / conv_time_used);
+    DEBUG_INFO("report : oplib_layer_relu          calculation profermance is [%lf] GFLOPS/s\n", relu_gflops / relu_time_used);
+    DEBUG_INFO("report : oplib_layer_avgpool       calculation profermance is [%lf] GFLOPS/s\n", pool_gflops / pool_time_used);
 
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 

@@ -18,3 +18,18 @@ TEST(pooling, test0)
     }
     
 }
+
+TEST(pooling, test1)
+{
+    int i;
+
+    oplib_layer_avgpool_forward_omp(&pool_param, 
+                              ofm_relu_golden, 
+                              ofm_pool);
+
+    for(i=0; i<OFM_POOL_SZ;++i)
+    {
+        ASSERT_FLOAT_EQ(ofm_pool[i], ofm_pool_golden[i]);
+    }
+    
+}

@@ -18,3 +18,18 @@ TEST(relu, test0)
     }
     
 }
+
+TEST(relu, test1)
+{
+    int i;
+
+    oplib_layer_relu_forward_omp(&relu_param, 
+                              ofm_conv_golden, 
+                              ofm_relu);
+
+    for(i=0; i<OFM_RELU_SZ;++i)
+    {
+        ASSERT_FLOAT_EQ(ofm_relu[i], ofm_relu_golden[i]);
+    }
+    
+}

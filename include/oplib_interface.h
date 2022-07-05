@@ -67,19 +67,26 @@ double oplib_get_cpu_peak_gflops_fpu();
 
 /*layer interface*/
 /*conv2d layer*/
-void   oplib_layer_conv2d_3x3_s1_forward(const strConv2DParam_t *pParam, 
+void   oplib_layer_conv2d_s1_forward(const strConv2DParam_t *pParam, 
               const FLOAT_T *pbuf_in, 
                     FLOAT_T *pbuf_out, 
               const FLOAT_T *pbuf_wt,
               const FLOAT_T *pbuf_bs);
-double oplib_layer_conv2d_3x3_s1_report_property(const strConv2DParam_t *pParam);
+void   oplib_layer_conv2d_s1_forward_omp(const strConv2DParam_t *pParam, 
+              const FLOAT_T *pbuf_in, 
+                    FLOAT_T *pbuf_out, 
+              const FLOAT_T *pbuf_wt,
+              const FLOAT_T *pbuf_bs);
+double oplib_layer_conv2d_s1_report_property(const strConv2DParam_t *pParam);
 
 /*relu layer*/
 void   oplib_layer_relu_forward(const strReluParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out);
+void   oplib_layer_relu_forward_omp(const strReluParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out);
 double oplib_layer_relu_report_property(const strReluParam_t *pParam);
 
 /*avgpool layer*/
 void   oplib_layer_avgpool_forward(const strAvgPoolParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out);
+void   oplib_layer_avgpool_forward_omp(const strAvgPoolParam_t *pParam, const FLOAT_T *pbuf_in, FLOAT_T *pbuf_out);
 double oplib_layer_avgpool_report_property(const strAvgPoolParam_t *pParam);
 
 /*fused conv2d_relu_pooling layer*/
@@ -95,7 +102,6 @@ double oplib_layer_fused_conv2d_relu_avgpool_report_property(const strConv2DPara
               const strAvgPoolParam_t *pParam_pool);
 
 /*other interface*/
-int oplib_conv2d_demo(int a, int b);
 
 #ifdef __cplusplus
 }

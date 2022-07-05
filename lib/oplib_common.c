@@ -90,8 +90,8 @@ void oplib_dump_nhwc_fp32(const strDimNHWC_t *pDim, const FLOAT_T *pbuf, const c
             }
 
         }
+        printf("\n\n");
     }
-    printf("\n\n");
 }
 
 void oplib_gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
@@ -126,7 +126,6 @@ void oplib_gen_nhwc_fp32(const strDimNHWC_t *pDim, FLOAT_T *pbuf)
 double oplib_get_cpu_peak_gflops_avx2()
 {
     PROF_TMR_DECL();
-    //DEBUG_INFO("get_cpu_peak_gflops_avx2.........\n");
 
     PROF_TMR_START();
     __asm__(
@@ -149,7 +148,6 @@ double oplib_get_cpu_peak_gflops_avx2()
 double oplib_get_cpu_peak_gflops_fpu()
 {
     PROF_TMR_DECL();
-    //DEBUG_INFO("get_cpu_peak_gflops_fpu.........\n");
 
     PROF_TMR_START();
     __asm__(
@@ -177,9 +175,4 @@ double oplib_get_cpu_peak_gflops_fpu()
     PROF_TMR_END();
 
     DEBUG_INFO("peak fpu computation performance(1 thread) is [%lf] GFLOPS/s\n", (4+4)*1000000000.0/PROF_TMR_VALSEC/1000000000);
-}
-
-int oplib_conv2d_demo(int a, int b)
-{
-    return a+b;
 }

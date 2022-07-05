@@ -1,11 +1,11 @@
 #ifndef _BENCHMARK_TESTCASE_H__
 #define _BENCHMARK_TESTCASE_H__
 
-#define  CONV_N		(2)        // batch size
-#define  CONV_IC	(64)       // input channels
-#define  CONV_IH	(256)      // input height
-#define  CONV_IW	(256)      // input width
-#define  CONV_OC	(64)       // output channels
+#define  CONV_N		(4)        // batch size
+#define  CONV_IC	(32)       // input channels
+#define  CONV_IH	(512)      // input height
+#define  CONV_IW	(512)      // input width
+#define  CONV_OC	(16)       // output channels
 #define  CONV_OH	(CONV_IH)  // output height
 #define  CONV_OW	(CONV_IW)  // output width
 #define  CONV_KH	(3)        // weights height
@@ -36,6 +36,10 @@
 #define  POOL_OC	(POOL_IC)  // input channels
 #define  POOL_OH	((POOL_IH+1)/POOL_SH)  // input height
 #define  POOL_OW	((POOL_IW+1)/POOL_SW)  // input width
+
+#define CONV_ITERNUM        (1)
+#define RELU_ITERNUM        (200)
+#define POOL_ITERNUM        (200)
 
 #ifdef __cplusplus
 }
