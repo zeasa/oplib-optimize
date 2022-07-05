@@ -1,9 +1,9 @@
 ########################################
 add_executable(benchmark_net_conv2d_relu_pooling_fuse benchmark_net_conv2d_relu_pooling_fuse.c)
-target_link_libraries(benchmark_net_conv2d_relu_pooling_fuse oplib libmkl_intel_ilp64.a libmkl_sequential.a libmkl_core.a argtable3)
+target_link_libraries(benchmark_net_conv2d_relu_pooling_fuse oplib libmkl_intel_ilp64.a libmkl_sequential.a libmkl_core.a argtable3 m)
 
 add_executable(benchmark_net_conv2d_relu_pooling_nofuse benchmark_net_conv2d_relu_pooling_nofuse.c)
-target_link_libraries(benchmark_net_conv2d_relu_pooling_nofuse oplib libmkl_intel_ilp64.a libmkl_sequential.a libmkl_core.a argtable3)
+target_link_libraries(benchmark_net_conv2d_relu_pooling_nofuse oplib libmkl_intel_ilp64.a libmkl_sequential.a libmkl_core.a argtable3 m)
 
 ########################################
 # install
