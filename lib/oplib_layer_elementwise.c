@@ -41,7 +41,7 @@ void oplib_layer_relu_forward_omp(const strReluParam_t *pParam, const FLOAT_T *p
 double oplib_layer_relu_report_property(const strReluParam_t *pParam)
 {
     assert(pParam != NULL);
-    double gflops = 0.0;
+    double gflops = 1.0d * pParam->param_N * pParam->param_IC * pParam->param_IW * pParam->param_IH / (1.0*1000*1000*1000);
     
     DEBUG_INFO("oplib_layer_relu param : IN=[%d],IH=[%d],IW=[%d],IC=[%d],OH=[%d],OW=[%d],OC=[%d],gflops=[%.6lf]\n", 
                pParam->param_N, 

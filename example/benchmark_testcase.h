@@ -41,6 +41,8 @@
 #define RELU_ITERNUM        (200)
 #define POOL_ITERNUM        (200)
 
+#define NETW_ITERNUM        (1)
+
 #ifdef __cplusplus
 }
 #endif

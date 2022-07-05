@@ -5,8 +5,6 @@
 
 #define __ARGTABLE
 
-#define NET_ITERNUM         (1)
-
 struct arg_lit  *help;
 struct arg_lit  *version;
 struct arg_lit  *debug;
@@ -64,8 +62,9 @@ int main(int argc, char *argv[])
     double cpu_gflops_avx2;
     double cpu_gflops_fpu;
 
-    double net_gflops;
-    double net_time_used;
+    double netw_gflops;
+    double netw_time_used;
+    double netw_omp_time_used;
 
     FLOAT_T *pbuf_ifm_conv = NULL;
     FLOAT_T *pbuf_wt_conv  = NULL;
@@ -81,7 +80,7 @@ int main(int argc, char *argv[])
     PROF_TMR_DECL();
 
     DEBUG_INFO("benchmark_net_conv2d_relu_pooling_fuse...\n");
-    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
     //argment processing
 #ifdef __ARGTABLE
@@ -184,23 +183,34 @@ int main(int argc, char *argv[])
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_bs_conv, "pbuf_bs_conv", dump_enable);
 
     //gflops calculation and property report
-    net_gflops = oplib_layer_fused_conv2d_relu_avgpool_report_property(&conv2d_param, &relu_param, &pool_param);
+    netw_gflops = oplib_layer_fused_conv2d_relu_avgpool_report_property(&conv2d_param, &relu_param, &pool_param);
 
-    //do the conv2d calculation and profiling
+    //do the fused layer calculation and profiling///////////////////////////////////
     PROF_TMR_START();
-    for(int i=0; i<NET_ITERNUM; i++)
+    for(int i=0; i<NETW_ITERNUM; i++)
     {
-        oplib_layer_fused_conv2d_relu_avgpool_forward(&conv2d_param, &relu_param, &pool_param, 
+        oplib_layer_fused_conv2d_relu_avgpool_forward(&conv2d_param, &relu_param, &pool_param,
                                    pbuf_ifm_conv, 
                                    pbuf_ofm_pool, 
                                    pbuf_wt_conv,
                                    pbuf_bs_conv); 
     }
     PROF_TMR_END();
-    net_time_used = PROF_TMR_VALSEC / NET_ITERNUM;
+    netw_time_used = PROF_TMR_VALSEC / NETW_ITERNUM;
 
+    PROF_TMR_START();
+    for(int i=0; i<NETW_ITERNUM; i++)
+    {
+        oplib_layer_fused_conv2d_relu_avgpool_forward_omp(&conv2d_param, &relu_param, &pool_param,
+                                   pbuf_ifm_conv, 
+                                   pbuf_ofm_pool, 
+                                   pbuf_wt_conv,
+                                   pbuf_bs_conv); 
+    }
+    PROF_TMR_END();
+    netw_omp_time_used = PROF_TMR_VALSEC / NETW_ITERNUM;
 
-    //check the result
+    //check the result////////////////////////////////////////////////////////
     dim_nhwc.n = pool_param.param_N;
     dim_nhwc.c = pool_param.param_OC;
     dim_nhwc.h = pool_param.param_OH;
@@ -209,8 +219,10 @@ int main(int argc, char *argv[])
 
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
-    DEBUG_INFO("report : oplib_layer_fused_conv2d_relu_avgpool cost [%lf] seconds in avg within [%d] iters\n", net_time_used, NET_ITERNUM);
-    DEBUG_INFO("report : oplib_layer_fused_conv2d_relu_avgpool calculation profermance is [%lf] GFLOPS/s\n",   net_gflops / net_time_used);
+    DEBUG_INFO("report : oplib_layer_fused_conv_relu_pool     cost [%lf] seconds in avg within [%d] iters\n", netw_time_used, NETW_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_fused_conv_relu_pool_omp cost [%lf] seconds in avg within [%d] iters\n", netw_omp_time_used, NETW_ITERNUM);
+    DEBUG_INFO("report : oplib_layer_fused_conv_relu_pool     calculation profermance is [%lf] GFLOPS/s\n",   netw_gflops / netw_time_used);
+    DEBUG_INFO("report : oplib_layer_fused_conv_relu_pool_omp calculation profermance is [%lf] GFLOPS/s\n",   netw_gflops / netw_omp_time_used);
 
     DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 

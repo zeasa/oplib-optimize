@@ -97,6 +97,13 @@ void oplib_layer_fused_conv2d_relu_avgpool_forward(const strConv2DParam_t *pPara
                     FLOAT_T *pbuf_out, 
               const FLOAT_T *pbuf_wt,
               const FLOAT_T *pbuf_bs);
+void oplib_layer_fused_conv2d_relu_avgpool_forward_omp(const strConv2DParam_t *pParam_conv, 
+              const strReluParam_t *pParam_relu, 
+              const strAvgPoolParam_t *pParam_pool,
+              const FLOAT_T *pbuf_in, 
+                    FLOAT_T *pbuf_out, 
+              const FLOAT_T *pbuf_wt,
+              const FLOAT_T *pbuf_bs);
 double oplib_layer_fused_conv2d_relu_avgpool_report_property(const strConv2DParam_t *pParam_conv, 
               const strReluParam_t *pParam_relu, 
               const strAvgPoolParam_t *pParam_pool);

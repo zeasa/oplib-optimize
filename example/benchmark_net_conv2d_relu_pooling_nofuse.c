@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     PROF_TMR_DECL();
 
     DEBUG_INFO("benchmark_net_conv2d_relu_pooling_nofuse...\n");
-    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
     //argment processing
 #ifdef __ARGTABLE
@@ -217,8 +217,8 @@ int main(int argc, char *argv[])
 
     //gflops calculation and property report
     conv_gflops = oplib_layer_conv2d_s1_report_property(&conv2d_param);
-    relu_gflops   = oplib_layer_relu_report_property(&relu_param);
-    pool_gflops   = oplib_layer_avgpool_report_property(&pool_param);
+    relu_gflops = oplib_layer_relu_report_property(&relu_param);
+    pool_gflops = oplib_layer_avgpool_report_property(&pool_param);
 
     //do the conv2d calculation and profiling///////////////////////////////////
     PROF_TMR_START();
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
     PROF_TMR_END();
     conv_omp_time_used = PROF_TMR_VALSEC / CONV_ITERNUM;
 
-    //do the conv2d calculation and profiling/////////////////////////////////
+    //do the relu calculation and profiling/////////////////////////////////
     PROF_TMR_START();
     for(int i=0; i<RELU_ITERNUM; i++)
     {
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
     PROF_TMR_END();
     relu_omp_time_used = PROF_TMR_VALSEC / RELU_ITERNUM;
 
-    //do the conv2d calculation and profiling/////////////////////////////////
+    //do the pooling calculation and profiling/////////////////////////////////
     PROF_TMR_START();
     for(int i=0; i<POOL_ITERNUM; i++)
     {
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
     oplib_dump_nhwc_fp32(&dim_nhwc, pbuf_ofm_pool, "pbuf_ofm_pool", dump_enable);
 
 
-    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
     DEBUG_INFO("report : oplib_layer_conv2d_s1     cost [%lf] seconds in avg within [%d] iters\n", conv_time_used, CONV_ITERNUM);
     DEBUG_INFO("report : oplib_layer_relu          cost [%lf] seconds in avg within [%d] iters\n", relu_time_used, RELU_ITERNUM);
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
     DEBUG_INFO("report : oplib_layer_relu          calculation profermance is [%lf] GFLOPS/s\n", relu_gflops / relu_time_used);
     DEBUG_INFO("report : oplib_layer_avgpool       calculation profermance is [%lf] GFLOPS/s\n", pool_gflops / pool_time_used);
 
-    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    DEBUG_INFO(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 
     //do program finalization
     free(pbuf_ifm_conv);

@@ -118,7 +118,8 @@ void oplib_layer_avgpool_forward_omp(const strAvgPoolParam_t *pParam, const FLOA
 double oplib_layer_avgpool_report_property(const strAvgPoolParam_t *pParam)
 {
     assert(pParam != NULL);
-    double gflops = 0.0;
+    double gflops = 1.0d * pParam->param_N * pParam->param_OC * pParam->param_OW * pParam->param_OH * 
+                    pParam->param_KH * pParam->param_KW / (1.0*1000*1000*1000);
     
     DEBUG_INFO("oplib_layer_avgpool param : IN=[%d],IH=[%d],IW=[%d],IC=[%d],OH=[%d],OW=[%d],OC=[%d],gflops=[%.6lf]\n", 
                pParam->param_N, 
