@@ -12,9 +12,9 @@ set(BIN_INSTALL_PATH install/bin)
 
 ########################################
 # language
-set(CMAKE_CXX_FLAGS_DEBUG          "-qmkl -O0 -g3 "          CACHE STRING "Flags used by the CXX compiler during DEBUG builds.")
-set(CMAKE_CXX_FLAGS_RELEASE        "-qmkl -O2 "     CACHE STRING "Flags used by the CXX compiler during RELEASE builds.")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-qmkl -O2 -g3 " CACHE STRING "Flags used by the CXX compiler during RELWITHDEBINFO builds.")
+set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g3 "          CACHE STRING "Flags used by the CXX compiler during DEBUG builds.")
+set(CMAKE_CXX_FLAGS_RELEASE        "-O2 "     CACHE STRING "Flags used by the CXX compiler during RELEASE builds.")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g3 " CACHE STRING "Flags used by the CXX compiler during RELWITHDEBINFO builds.")
 
 option(ENABLE_WERROR "Compile with -Werror enabled (default is OFF)" OFF)
 if (ENABLE_WERROR)
